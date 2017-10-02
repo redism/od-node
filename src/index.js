@@ -124,6 +124,14 @@ function runInExpressContext (runLogic, req, res, next) {
     .finally(() => { return context.runDeferred() })
 }
 
+function runInTestContext (mod) {
+  return async () => {
+    const context = createContext()
+    return mod.runLogic(context)
+      .finally(() => { return context.runDeferred() })
+  }
+}
+
 module.exports = exports = {
   getMySQLConnection: getMySQLConnection,
   genSaltedPassword,
@@ -131,4 +139,5 @@ module.exports = exports = {
   Knex,
   runInLambdaContext,
   runInExpressContext,
+  runInTestContext,
 }

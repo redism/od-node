@@ -1,6 +1,13 @@
 {
   "presets": [
-    "node6",
+    [
+      "env",
+      {
+        "targets": {
+          "node": "v6.10.0"
+        }
+      }
+    ],
     "bluebird"
   ],
   "plugins": [
