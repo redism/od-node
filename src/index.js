@@ -4,7 +4,7 @@ const Knex = require('knex')
 const knex = Knex({ client: 'mysql' }) // use only for query-builder
 
 function getMySQLConnection () {
-  return mysql.createConnection({
+  const conn = mysql.createConnection({
     host: 'gameberrycashbackdb.cgta6qz5w1ey.us-east-1.rds.amazonaws.com',
     user: 'root',
     password: 'Rpdlaqpfl',
@@ -12,43 +12,40 @@ function getMySQLConnection () {
     database: 'gcb',
     debug: false
   })
+
+  const orgQuery = conn.query.bind(conn)
+  conn.query = function (query) {
+    return new Promise((resolve, reject) => {
+      orgQuery(query, {}, (err, res) => {
+        err ? reject(err) : resolve(res)
+      })
+    })
+  }
+  return conn
 }
 
-function genSaltedPassword (pw, iteration = 10, cb) {
-  bcrypt.genSalt(iteration, (err, salt) => {
-    if (err) {
-      cb(err)
-    } else {
-      bcrypt.hash(pw, salt, (err, salted) => {
-        if (err) {
-          cb(err)
-        } else {
-          const sqlInsertAdmin = knex('setting').insert({
-            email: 'jeff.oh@overdosed.co.kr',
-            pw: salted,
-            forcedUpdateVersion: null,
-          }).toString()
-
-          const conn = getMySQLConnection()
-          const sqlResetSetting = knex('setting').delete().toString()
-          conn.query(sqlResetSetting, {}, (err, res) => {
-            if (err) {
-              cb(err)
-            } else {
-              conn.query(sqlInsertAdmin, {}, (err, res) => {
-                conn.end()
-                if (err) {
-                  cb(err)
-                } else {
-                  console.log(res)
-                  cb(null, `Ran SQL successfully => ${res}`)
-                }
-              })
-            }
-          })
-        }
-      })
-    }
+/**
+ * bcryptjs 를 이용하여 salted password 를 생성한다.
+ *
+ * @param pw {string}
+ * @param iteration {number=10}
+ * @return {Promise}
+ */
+async function genSaltedPassword (pw, iteration = 10) {
+  return new Promise((resolve, reject) => {
+    bcrypt.genSalt(iteration, (err, salt) => {
+      if (err) {
+        reject(err)
+      } else {
+        bcrypt.hash(pw, salt, (err, salted) => {
+          if (err) {
+            reject(err)
+          } else {
+            resolve(salted)
+          }
+        })
+      }
+    })
   })
 }
 
@@ -57,5 +54,4 @@ module.exports = exports = {
   genSaltedPassword,
   knex,
   Knex,
-  delay,
 }
