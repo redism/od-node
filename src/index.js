@@ -57,4 +57,5 @@ module.exports = exports = {
   genSaltedPassword,
   knex,
   Knex,
+  delay,
 }

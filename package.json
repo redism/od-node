@@ -2,15 +2,23 @@
   "name": "overdosed-node-lib",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "lib/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "babel src -d lib"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "bcryptjs": "2.4.3",
+    "bluebird": "^3.5.0",
     "knex": "0.13.0",
     "mysql": "2.14.1"
+  },
+  "devDependencies": {
+    "babel-cli": "6.26.0",
+    "babel-preset-node6": "^11.0.0",
+    "babel-plugin-transform-async-to-generator": "^6.24.1",
+    "babel-preset-bluebird": "^1.0.1"
   }
 }

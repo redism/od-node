@@ -1,0 +1,9 @@
+{
+  "presets": [
+    "node6",
+    "bluebird"
+  ],
+  "plugins": [
+    "transform-async-to-generator"
+  ]
+}
