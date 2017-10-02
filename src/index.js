@@ -6,7 +6,7 @@ const knex = Knex({ client: 'mysql' }) // use only for query-builder
 /**
  * Returns MySQL connection, and inject promise-version of query function.
  *
- * @param options {Object} if omitted, try to read from environment variable.
+ * @param [options] {Object} if omitted, try to read from environment variable.
  *
  * {
  *   host: 'gameberrycashbackdb.cgta6qz5w1ey.us-east-1.rds.amazonaws.com',
@@ -81,9 +81,54 @@ async function genSaltedPassword (pw, iteration = 10) {
   })
 }
 
+function createContext () {
+  const deferred = []
+
+  function defer (fn) {
+    deferred.push(fn)
+  }
+
+  async function runDeferred () {
+    for (const index in deferred) {
+      try {
+        await Promise.resolve(deferred[ index ]())
+      } catch (ex) {
+        console.error(`Error during running deferred.`)
+        console.error(ex)
+      }
+    }
+  }
+
+  return {
+    defer,
+    runDeferred,
+    getMySQLConnection: (options) => {
+      const conn = getMySQLConnection(options)
+      defer(() => {conn.end()})
+      return conn
+    }
+  }
+}
+
+function runInLambdaContext (runLogic, e, ctx, cb) {
+  const context = createContext()
+  runLogic(context)
+    .then(res => cb(null, res), err => cb(err, null))
+    .finally(() => { return context.runDeferred() })
+}
+
+function runInExpressContext (runLogic, req, res, next) {
+  const context = createContext()
+  runLogic(context)
+    .then(ret => res.json(ret), next)
+    .finally(() => { return context.runDeferred() })
+}
+
 module.exports = exports = {
   getMySQLConnection: getMySQLConnection,
   genSaltedPassword,
   knex,
   Knex,
+  runInLambdaContext,
+  runInExpressContext,
 }
