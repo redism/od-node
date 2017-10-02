@@ -3,15 +3,34 @@ const bcrypt = require('bcryptjs')
 const Knex = require('knex')
 const knex = Knex({ client: 'mysql' }) // use only for query-builder
 
-function getMySQLConnection () {
-  const conn = mysql.createConnection({
-    host: 'gameberrycashbackdb.cgta6qz5w1ey.us-east-1.rds.amazonaws.com',
-    user: 'root',
-    password: 'Rpdlaqpfl',
-    port: 3306,
-    database: 'gcb',
-    debug: false
-  })
+/**
+ * Returns MySQL connection, and inject promise-version of query function.
+ *
+ * @param options {Object} if omitted, try to read from environment variable.
+ *
+ * {
+ *   host: 'gameberrycashbackdb.cgta6qz5w1ey.us-east-1.rds.amazonaws.com',
+ *   user: 'user',
+ *   password: 'password',
+ *   port: 3306,
+ *   database: 'gcb',
+ *   debug: false
+ * }
+ * @return {Connection}
+ */
+function getMySQLConnection (options) {
+  if (options === undefined || options === null) {
+    options = {
+      host: process.env.mysql_host,
+      user: process.env.mysql_user,
+      password: process.env.mysql_password,
+      port: parseInt(process.env.mysql_port, 10),
+      database: process.env.mysql_database,
+      debug: parseInt(process.env.mysql_debug, 10) === 1,
+    }
+  }
+
+  const conn = mysql.createConnection(options)
 
   const orgQuery = conn.query.bind(conn)
   conn.query = function (query) {
