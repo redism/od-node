@@ -172,7 +172,7 @@ function runInLambdaContext (runLogic, e, ctx, cb) {
   const context = createContext()
   context.getSignedCookie = name => NIY('runInLambdaContext.getSignedCookie')
   runLogic(context)
-    .then(res => cb(null, res), err => cb(err, null))
+    .then(res => cb(null, { data: res }), err => cb(err, null))
     .finally(() => { return context.runDeferred() })
 }
 
@@ -195,7 +195,7 @@ function runInExpressContext (runLogic, req, res, next) {
   }
 
   runLogic(context)
-    .then(ret => res.json(ret), next)
+    .then(ret => res.json({ data: ret }), next)
     .finally(() => { return context.runDeferred() })
 }
 
