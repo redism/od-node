@@ -2,6 +2,7 @@ const mysql = require('mysql')
 const bcrypt = require('bcryptjs')
 const Knex = require('knex')
 const knex = Knex({ client: 'mysql' }) // use only for query-builder
+import jwt from 'jsonwebtoken'
 
 /**
  * Returns MySQL connection, and inject promise-version of query function.
@@ -81,6 +82,53 @@ async function genSaltedPassword (pw, iteration = 10) {
   })
 }
 
+async function checkSaltedPassword (pw, salted) {
+  return new Promise((resolve, reject) => {
+    bcrypt.compare(pw, salted, (err, res) => {err ? reject(err) : resolve(res)})
+  })
+}
+
+/**
+ * Create Json Web Token
+ *
+ * @param secret {string}
+ * @param data {object}
+ * @return {Promise}
+ */
+async function encodeJWTToken (secret, data) {
+  return new Promise((resolve, reject) => {
+    jwt.sign(data, secret, { algorithm: 'HS256' }, (err, res) => {
+      if (err) {
+        console.error(64, 'Generating jwt.Token failed!!')
+        console.error(err)
+        reject(err)
+      } else {
+        resolve(res)
+      }
+    })
+  })
+}
+
+/**
+ * Verify JWT token and resolve decoded data.
+ *
+ * @param secret {string}
+ * @param token {string}
+ * @return {Promise<Object>}
+ */
+async function decodeJWTToken (secret, token) {
+  return new Promise((resolve, reject) => {
+    jwt.verify(token, secret, (err, res) => {
+      err ? reject(err) : resolve(res)
+    })
+  })
+}
+
+const jwtUtil = {
+  encode: encodeJWTToken,
+  decode: decodeJWTToken,
+}
+
 function createContext () {
   const deferred = []
 
@@ -110,8 +158,13 @@ function createContext () {
   }
 }
 
+function NIY (name) {
+  throw new Error(`${name} NIY.`)
+}
+
 function runInLambdaContext (runLogic, e, ctx, cb) {
   const context = createContext()
+  context.getSignedCookie = name => NIY('runInLambdaContext.getSignedCookie')
   runLogic(context)
     .then(res => cb(null, res), err => cb(err, null))
     .finally(() => { return context.runDeferred() })
@@ -119,6 +172,21 @@ function runInLambdaContext (runLogic, e, ctx, cb) {
 
 function runInExpressContext (runLogic, req, res, next) {
   const context = createContext()
+  context.express = { req, res }
+
+  context.getSignedCookie = name => req.signedCookies[ name ]
+  context.setSignedCookie = (name, value) => res.cookie(name, value, { signed: true })
+  context.requestBody = req.body
+  context.ensure = function (expr, { msg, code, status }) {
+    if (!expr) {
+      const err = new Error(msg)
+      err.code = code || -1
+      err.status = status || 500
+      err.message = msg
+      throw err
+    }
+  }
+
   runLogic(context)
     .then(ret => res.json(ret), next)
     .finally(() => { return context.runDeferred() })
@@ -134,10 +202,12 @@ function runInTestContext (mod) {
 
 module.exports = exports = {
   getMySQLConnection: getMySQLConnection,
-  genSaltedPassword,
-  knex,
-  Knex,
-  runInLambdaContext,
-  runInExpressContext,
-  runInTestContext,
+  genSaltedPassword: genSaltedPassword,
+  checkSaltedPassword: checkSaltedPassword,
+  knex: knex,
+  Knex: Knex,
+  runInLambdaContext: runInLambdaContext,
+  runInExpressContext: runInExpressContext,
+  runInTestContext: runInTestContext,
+  jwtUtil,
 }
