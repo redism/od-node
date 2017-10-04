@@ -82,6 +82,12 @@ async function genSaltedPassword (pw, iteration = 10) {
   })
 }
 
+/**
+ * Check if given {pw} matches salted password {salted}
+ * @param pw {string}
+ * @param salted {string}
+ * @return {Promise<Boolean>}
+ */
 async function checkSaltedPassword (pw, salted) {
   return new Promise((resolve, reject) => {
     bcrypt.compare(pw, salted, (err, res) => {err ? reject(err) : resolve(res)})
@@ -183,6 +189,7 @@ function runInExpressContext (runLogic, req, res, next) {
       err.code = code || -1
       err.status = status || 500
       err.message = msg
+      err.handled = true
       throw err
     }
   }
