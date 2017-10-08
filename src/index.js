@@ -1,8 +1,10 @@
 const mysql = require('mysql')
 const bcrypt = require('bcryptjs')
 const Knex = require('knex')
+const ld = require('lodash')
 const knex = Knex({ client: 'mysql' }) // use only for query-builder
 const fs = require('fs')
+const moment = require('moment')
 import jwt from 'jsonwebtoken'
 
 /**
@@ -41,7 +43,7 @@ function getMySQLConnection (options) {
   const orgQuery = conn.query.bind(conn)
   conn.query = function (query) {
     return new Promise((resolve, reject) => {
-      orgQuery(query, {}, (err, res) => {
+      orgQuery(query, (err, res) => {
         err ? reject(err) : resolve(res)
       })
     })
@@ -181,11 +183,27 @@ function runInExpressContext (runLogic, req, res, next) {
   const context = createContext()
   context.express = { req, res }
 
+  // TODO: extract these out.
   context.getSignedCookie = name => req.signedCookies[ name ]
   context.setSignedCookie = (name, value) => res.cookie(name, value, { signed: true })
   context.requestBody = req.body
-  context.ensure = function (expr, { msg, code, status }) {
+  context.ensure = function (expr, errorObject) {
     if (!expr) {
+      if (ld.isFunction(errorObject)) {
+        errorObject = errorObject() || 'Undefined error'
+      }
+
+      let msg, code, status
+      if (ld.isString(errorObject)) {
+        msg = errorObject
+        code = -1
+        status = 400
+      } else {
+        msg = errorObject.msg
+        code = errorObject.code
+        status = errorObject.status
+      }
+
       const err = new Error(msg)
       err.code = code || -1
       err.status = status || 500
@@ -193,6 +211,57 @@ function runInExpressContext (runLogic, req, res, next) {
       err.handled = true
       throw err
     }
+  }
+  context.ensure.oneOf = function (value, possibles, errorObject) {
+    context.ensure(possibles.indexOf(value) >= 0, errorObject)
+  }
+  context.ensure.nonEmptyString = function (value, errorObject) {
+    context.ensure(ld.isString(value) && !ld.isEmpty(value), errorObject)
+  }
+
+  context.sanitize = {
+    binaryNumberToBool: (val, errorObject) => {
+      const i = parseInt(val, 10)
+      context.ensure.oneOf(i, [ 0, 1 ], errorObject)
+      return i === 1
+    },
+    linkString: (value, errorObject) => {
+      const val = value.trim()
+      context.ensure.nonEmptyString(val, errorObject)
+      context.ensure(val.toLowerCase().startsWith('http'))
+      return val
+    },
+    percentage: (value, errorObject) => {
+      const val = parseFloat(value)
+      context.ensure(ld.isNumber(val) && !ld.isNaN(val), errorObject)
+      context.ensure(val >= 0 && val <= 100, errorObject)
+      return val
+    },
+    positiveInt: (value, errorObject) => {
+      const val = parseInt(value, 10)
+      context.ensure(ld.isNumber(val) && !ld.isNaN(val), errorObject)
+      context.ensure(val >= 0, errorObject)
+      return val
+    },
+    positiveIntOrNull: (value, nullValue, errorObject) => {
+      const val = parseInt(value, 10)
+      context.ensure(ld.isNumber(val) && !ld.isNaN(val), errorObject)
+      context.ensure(val >= 0 || val === nullValue, errorObject)
+      return (val >= 0 ? val : null)
+    },
+    datetime: (value, errorObject) => {
+      let val
+      if (ld.isString(value)) {
+        val = moment(value, 'YYYY-MM-DD HH:mm:ss')
+      } else if (ld.isNumber(value)) {
+        val = moment(new Date(value))
+      } else if (ld instanceof Date) {
+        val = moment(ld)
+      }
+
+      context.ensure(val.isValid(), errorObject)
+      return val.format('YYYY-MM-DD HH:mm:ss')
+    },
   }
 
   runLogic(context)
@@ -265,4 +334,6 @@ module.exports = exports = {
   jwtUtil,
   copyFile: copyFile,
   moveFile: moveFile,
+  moment: moment,
+  mysql: mysql,
 }
