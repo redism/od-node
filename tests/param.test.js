@@ -92,6 +92,17 @@ describe('sanitizer with high-order function', () => {
     expect(() => objectSanitizer(iv2)).toThrow(defError({ value: -12 }))
   })
 
+  it('object /w value', () => {
+    const objectSanitizer = sanitizer.object({
+      name: sanitizer.nonEmptyString(({ value }) => `Invalid name field : ${value}`),
+      age: sanitizer.chain(sanitizer.parseInt(), sanitizer.positiveInt()),
+      sex: sanitizer.just('male'),
+    })
+
+    const v1 = { name: '123', age: 18 }
+    expect(objectSanitizer(v1)).toEqual(Object.assign(v1, { sex: 'male' }))
+  })
+
   it('builder return', () => {
     const builder = sanitizer.builder()
     expect(_.isFunction(builder.nonEmptyString)).toBeTruthy()
@@ -116,10 +127,71 @@ describe('sanitizer with high-order function', () => {
     expect(() => objectSanitizer(iv2)).toThrow(defError({ value: -12 }))
   })
 
-  it('dateTime sanitizer', () => {
+  it('builder final error', () => {
+    const s = sanitizer.builder().parseInt().positiveInt().build(({ value }) => `No ${value}`)
+    expect(() => s(-1)).toThrow('No -1')
+  })
+
+  it('dateTime', () => {
     const s = sanitizer.builder().dateTime().build()
     const t = '2018-01-13 01:23:45'
     expect(s(t)).toEqual(t)
     expect(() => s('')).toThrow()
+  })
+
+  it('oneOf', () => {
+    const s = sanitizer.builder().oneOf([ 0, 1 ]).build()
+    expect(s(0)).toEqual(0)
+    expect(() => s('1')).toThrow()
+    expect(() => s('2')).toThrow()
+  })
+
+  it('oneOf map', () => {
+    const s = sanitizer.builder().oneOf({ 'sc': 0, 'bc': 1 }).build()
+    expect(s('sc')).toEqual(0)
+    expect(s('bc')).toEqual(1)
+    expect(() => s('1')).toThrow()
+    expect(() => s(0)).toThrow()
+  })
+
+  it('parsePositiveInt', () => {
+    const s = sanitizer.parsePositiveInt(({ value }) => `No.. ${value}`)
+    expect(() => s(-1)).toThrow('No.. -1')
+  })
+
+  it('exactly', () => {
+    const s = sanitizer.exactly(10)
+    expect(s(10)).toEqual(10)
+    expect(() => s(12)).toThrow()
+  })
+
+  it('just /w function', () => {
+    let i = 0
+    const counter = () => i++
+    const s = sanitizer.just(counter)
+
+    expect(s()).toEqual(0)
+    expect(s()).toEqual(1)
+  })
+
+  it('pass', () => {
+    const s = sanitizer.pass()
+    expect(s(10)).toEqual(10)
+    expect(s(null)).toBeNull()
+  })
+
+  it('pass /w mapper', () => {
+    const s = sanitizer.pass(v => v.toString())
+    expect(s(10)).toEqual('10')
+  })
+
+  it('object sanitizer with unspecified field', () => {
+    const s = sanitizer.object({ name: sanitizer.nonEmptyString() })
+    expect(s({ name: 'hello', age: 20 })).toEqual({ name: 'hello' })
+  })
+
+  it('dateTime /w Date object', () => {
+    const s = sanitizer.dateTime()
+    expect(() => s(new Date())).not.toThrow()
   })
 })

@@ -51,29 +51,44 @@ ensure.nonEmptyString = ensureNonEmptyString
 ensure.bool = ensureBool
 
 const signature = 'od.sanitizer'
-const wrap = funcSanitize => {
-  funcSanitize._sanitizer = signature
+const wrap = (funcSanitize, name = '') => {
+  if (name) {
+    funcSanitize._sanitizer = [ signature, name ].join('.')
+  } else {
+    funcSanitize._sanitizer = signature
+  }
   return funcSanitize
 }
 const isSanitizer = fn => {
-  return ld.isFunction(fn) && fn._sanitizer && fn._sanitizer === signature
+  return ld.isFunction(fn) && fn._sanitizer && fn._sanitizer.startsWith(signature)
+}
+const isJustSanitizer = fn => {
+  return isSanitizer(fn) && fn._sanitizer.endsWith('just')
 }
 
 const objectSanitizer = function ({ defError }) {
   return (obj, errorObject = defError) => {
     ensure(ld.isObject(obj), 'Invalid usage of sanitizer.object')
+    const defaultValue = {}
+
     for (let prop in obj) {
       if (obj.hasOwnProperty(prop)) {
         ensure(isSanitizer(obj[ prop ]), `Invalid usage of sanitizer.object, [${prop}] is not a sanitizer`)
+        if (isJustSanitizer(obj[ prop ])) {
+          defaultValue[ prop ] = obj[ prop ]()
+        }
       }
     }
 
     return wrap(value => {
-      let converted = {}
+      let converted = ld.cloneDeep(defaultValue)
       ensure(ld.isObject(value), errorObject, { value })
       for (let prop in value) {
-        if (value.hasOwnProperty(prop)) {
+        // console.log(`Processing ${prop}`)
+        if (value.hasOwnProperty(prop) && obj.hasOwnProperty(prop)) {
           converted[ prop ] = obj[ prop ](value[ prop ], errorObject)
+        } else {
+          obj[ prop ] = value[ prop ]
         }
       }
       return converted
@@ -89,12 +104,14 @@ const chainSanitizer = ({ defError }) => (...sanitizers) => {
   const last = sanitizers[ sanitizers.length - 1 ]
   let maxIndex = sanitizers.length - 1
   let errorObject
+  let errorIsNotDefault = false
 
   if (isSanitizer(last)) {
     maxIndex++
     errorObject = defError
   } else { // assume it's error object
     errorObject = last
+    errorIsNotDefault = true
   }
 
   return wrap(value => {
@@ -103,7 +120,8 @@ const chainSanitizer = ({ defError }) => (...sanitizers) => {
       try {
         intermediateValue = sanitizers[ i ](intermediateValue)
       } catch (ex) {
-        ensure(false, ex._errorObject || errorObject, { value })
+        const err = errorIsNotDefault ? errorObject || ex._errorObject : ex._errorObject || errorObject
+        ensure(false, err, { value })
       }
     }
     return intermediateValue
@@ -190,13 +208,55 @@ const dateTimeSanitizer = ({ defError }) => (options, errorObject = defError) =>
       val = moment(value, options.format)
     } else if (ld.isNumber(value)) {
       val = moment(new Date(value))
-    } else if (ld instanceof Date) {
-      val = moment(ld)
+    } else if (value instanceof Date) {
+      val = moment(value)
     }
 
     ensure(val.isValid(), errorObject)
     return val.format(options.format)
   })
+}
+
+const oneOfSanitizer = ({ defError }) => (possibles, options, errorObject = defError) => {
+  let values
+  let mapper
+  if (ld.isArray(possibles)) {
+    values = possibles
+    mapper = index => values[ index ]
+  } else if (ld.isObject(possibles)) {
+    values = Object.keys(possibles)
+    mapper = index => possibles[ values[ index ] ]
+  } else {
+    ensure(false, 'oneOf requires array or object.')
+  }
+
+  return wrap(value => {
+    const index = values.indexOf(value)
+    ensure(index >= 0, errorObject, { value, possibles })
+    return mapper(index)
+  })
+}
+
+const just = () => (value) => {
+  const getter = ld.isFunction(value) ? value : () => value
+  return wrap(getter, 'just')
+}
+
+const exactly = ({ defError }) => (val, errorObject = defError) => {
+  return wrap(value => {
+    ensure(val === value, errorObject, { value })
+    return value
+  })
+}
+
+const pass = () => (mapper = v => v) => {
+  return wrap(v => mapper(v))
+}
+
+const parsePositiveInt = function ({ defError }) {
+  return function (errorObject = defError) {
+    return this.builder().parseInt().positiveInt().build(errorObject)
+  }
 }
 
 function createSanitizedObject (options) {
@@ -211,6 +271,11 @@ function createSanitizedObject (options) {
     parseInt: parseIntSanitizer(options),
     positiveInt: positiveIntSanitizer(options),
     dateTime: dateTimeSanitizer(options),
+    oneOf: oneOfSanitizer(options),
+    parsePositiveInt: parsePositiveInt(options),
+    exactly: exactly(options),
+    just: just(options),
+    pass: pass(options),
   }
 
   s.builder = () => {
@@ -230,7 +295,10 @@ function createSanitizedObject (options) {
         })(san)
       }
     }
-    builder.build = () => {
+    builder.build = (errorObject) => {
+      if (errorObject) {
+        return s.chain(...list, errorObject)
+      }
       return s.chain(...list)
     }
     return builder
