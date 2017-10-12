@@ -1,4 +1,6 @@
 import { sanitizer as Sanitizer } from '../src/param'
+import _ from 'lodash'
+import moment from 'moment'
 
 describe('sanitizer with high-order function', () => {
   const defError = ({ value }) => `Invalid param : ${value} / [${typeof value}]`
@@ -57,6 +59,15 @@ describe('sanitizer with high-order function', () => {
     expect(() => parseAndCheckPositive('-123')).toThrow(defError({ value: '-123' }))
   })
 
+  it('chain with custom error', () => {
+    const parseAndCheckPositive = sanitizer.chain(
+      sanitizer.parseInt(),
+      sanitizer.positiveInt(({ value }) => 'Nah..'),
+    )
+
+    expect(() => parseAndCheckPositive('-123')).toThrow('Nah..')
+  })
+
   it('anyOf', () => {
     expect(eitherFalseOrValidLink(validLink)).toEqual(validLink)
     expect(eitherFalseOrValidLink('0')).toEqual(false)
@@ -81,5 +92,34 @@ describe('sanitizer with high-order function', () => {
     expect(() => objectSanitizer(iv2)).toThrow(defError({ value: -12 }))
   })
 
-  it.skip('simple chainable')
+  it('builder return', () => {
+    const builder = sanitizer.builder()
+    expect(_.isFunction(builder.nonEmptyString)).toBeTruthy()
+    const s = builder.nonEmptyString().build()
+    expect(s('123')).toEqual('123')
+    expect(() => s('')).toThrow('Invalid param :  / [string]')
+  })
+
+  it('using builder', () => {
+    const objectSanitizer = sanitizer.object({
+      name: sanitizer.builder().nonEmptyString(({ value }) => `Invalid name field : ${value}`).build(),
+      age: sanitizer.builder().parseInt().positiveInt().build(),
+    })
+
+    const v1 = { name: '123', age: 18 }
+    expect(objectSanitizer(v1)).toEqual(v1)
+
+    const iv1 = { name: 123, age: 32 }
+    expect(() => objectSanitizer(iv1)).toThrow('Invalid name field : 123')
+
+    const iv2 = { name: 'jeff', age: -12 }
+    expect(() => objectSanitizer(iv2)).toThrow(defError({ value: -12 }))
+  })
+
+  it('dateTime sanitizer', () => {
+    const s = sanitizer.builder().dateTime().build()
+    const t = '2018-01-13 01:23:45'
+    expect(s(t)).toEqual(t)
+    expect(() => s('')).toThrow()
+  })
 })
