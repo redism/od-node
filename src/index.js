@@ -1,11 +1,11 @@
 const mysql = require('mysql')
 const bcrypt = require('bcryptjs')
 const Knex = require('knex')
-const ld = require('lodash')
 const knex = Knex({ client: 'mysql' }) // use only for query-builder
 const fs = require('fs')
 const moment = require('moment')
 import jwt from 'jsonwebtoken'
+import { sanitizer, ensure } from './param'
 
 /**
  * Returns MySQL connection, and inject promise-version of query function.
@@ -187,91 +187,8 @@ function runInExpressContext (runLogic, req, res, next) {
   context.getSignedCookie = name => req.signedCookies[ name ]
   context.setSignedCookie = (name, value) => res.cookie(name, value, { signed: true })
   context.requestBody = req.body
-  context.ensure = function (expr, errorObject) {
-    if (!expr) {
-      if (ld.isFunction(errorObject)) {
-        errorObject = errorObject() || 'Undefined error'
-      }
-
-      let msg, code, status
-      if (ld.isString(errorObject)) {
-        msg = errorObject
-        code = -1
-        status = 400
-      } else if (ld.isObject(errorObject)) {
-        msg = errorObject.msg
-        code = errorObject.code
-        status = errorObject.status
-      } else {
-        console.error(`ErrorObject is unknown type : ${typeof errorObject}`)
-        msg = 'Internal error'
-        code = -1042
-        status = 500
-      }
-
-      const err = new Error(msg)
-      err.code = code || -1
-      err.status = status || 500
-      err.message = msg
-      err.handled = true
-      throw err
-    }
-  }
-  context.ensure.oneOf = function (value, possibles, errorObject) {
-    context.ensure(possibles.indexOf(value) >= 0, errorObject)
-  }
-  context.ensure.nonEmptyString = function (value, errorObject) {
-    context.ensure(ld.isString(value) && !ld.isEmpty(value), errorObject)
-  }
-  context.ensure.bool = (val, errorObject) => {
-    context.ensure(ld.isBoolean(val), errorObject)
-    return val
-  }
-
-  context.sanitize = {
-    binaryNumberToBool: (val, errorObject) => {
-      const i = parseInt(val, 10)
-      context.ensure.oneOf(i, [ 0, 1 ], errorObject)
-      return i === 1
-    },
-    linkString: (value, errorObject) => {
-      const val = value.trim()
-      context.ensure.nonEmptyString(val, errorObject)
-      context.ensure(val.toLowerCase().startsWith('http'))
-      return val
-    },
-    percentage: (value, errorObject) => {
-      const val = parseFloat(value)
-      context.ensure(ld.isNumber(val) && !ld.isNaN(val), errorObject)
-      context.ensure(val >= 0 && val <= 100, errorObject)
-      return val
-    },
-    positiveInt: (value, errorObject) => {
-      const val = parseInt(value, 10)
-      context.ensure(ld.isNumber(val) && !ld.isNaN(val), errorObject)
-      context.ensure(val >= 0, errorObject)
-      return val
-    },
-    positiveIntOrNull: (value, nullValue, errorObject) => {
-      const val = parseInt(value, 10)
-      context.ensure(ld.isNumber(val) && !ld.isNaN(val), errorObject)
-      context.ensure(val >= 0 || val === nullValue, errorObject)
-      return (val >= 0 ? val : null)
-    },
-    datetime: (value, errorObject) => {
-      let val
-      if (ld.isString(value)) {
-        val = moment(value, 'YYYY-MM-DD HH:mm:ss')
-      } else if (ld.isNumber(value)) {
-        val = moment(new Date(value))
-      } else if (ld instanceof Date) {
-        val = moment(ld)
-      }
-
-      context.ensure(val.isValid(), errorObject)
-      return val.format('YYYY-MM-DD HH:mm:ss')
-    },
-  }
+  context.ensure = ensure
+  context.sanitizer = sanitizer({ defError: ({ value }) => `Invalid param with value : ${value}` })
 
   runLogic(context)
     .then(ret => res.json({ data: ret }), next)
@@ -345,4 +262,6 @@ module.exports = exports = {
   moveFile: moveFile,
   moment: moment,
   mysql: mysql,
+  sanitizer: sanitizer,
+  ensure: ensure,
 }
