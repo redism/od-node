@@ -1,11 +1,15 @@
+// TODO: 이제 좀 더 제대로 모듈화. (ODServer 라는 패키지 만들기)
 const mysql = require('mysql')
-const bcrypt = require('bcryptjs')
+const bcrypt = require('bcrypt')
 const Knex = require('knex')
 const knex = Knex({ client: 'mysql' }) // use only for query-builder
 const fs = require('fs')
 const moment = require('moment')
 import jwt from 'jsonwebtoken'
 import { sanitizer, ensure } from './param'
+import { connectMySQLPool } from './mysql'
+
+let getMySQLConnection
 
 /**
  * Returns MySQL connection, and inject promise-version of query function.
@@ -22,7 +26,7 @@ import { sanitizer, ensure } from './param'
  * }
  * @return {Connection}
  */
-function getMySQLConnection (options) {
+function getMySQLConnectionLambda (options) {
   if (options === undefined || options === null) {
     if (getMySQLConnection.options) {
       options = getMySQLConnection.options
@@ -56,8 +60,37 @@ function getMySQLConnection (options) {
  *
  * @param options {object}
  */
-getMySQLConnection.setOptions = function (options) {
+getMySQLConnectionLambda.setOptions = function (options) {
   getMySQLConnection.options = options
+}
+
+getMySQLConnection = getMySQLConnectionLambda
+
+let globalMySQLPool
+
+async function initMySQLPool (options) {
+  // TODO: merge with initLambda...
+  if (options === undefined || options === null) {
+    if (getMySQLConnection.options) {
+      options = getMySQLConnection.options
+    } else {
+      options = {
+        host: process.env.mysql_host,
+        user: process.env.mysql_user,
+        password: process.env.mysql_password,
+        port: parseInt(process.env.mysql_port, 10),
+        database: process.env.mysql_database,
+        debug: parseInt(process.env.mysql_debug, 10) === 1,
+      }
+    }
+  }
+
+  globalMySQLPool = await connectMySQLPool(options)
+  getMySQLConnection = () => globalMySQLPool
+}
+
+async function closeMySQLPool () {
+  return globalMySQLPool.end()
 }
 
 /**
@@ -138,7 +171,7 @@ const jwtUtil = {
   decode: decodeJWTToken,
 }
 
-function createContext () {
+function createContext (usingMySQLPool) {
   const deferred = []
 
   function defer (fn) {
@@ -153,6 +186,14 @@ function createContext () {
         console.error(`Error during running deferred.`)
         console.error(ex)
       }
+    }
+  }
+
+  if (usingMySQLPool) {
+    return {
+      defer,
+      runDeferred,
+      getMySQLConnection,
     }
   }
 
@@ -180,7 +221,7 @@ function runInLambdaContext (runLogic, e, ctx, cb) {
 }
 
 function runInExpressContext (runLogic, req, res, next) {
-  const context = createContext()
+  const context = createContext(true)
   context.express = { req, res }
 
   // TODO: extract these out.
@@ -264,4 +305,6 @@ module.exports = exports = {
   mysql: mysql,
   sanitizer: sanitizer,
   ensure: ensure,
+  initMySQLPool: initMySQLPool,
+  closeMySQLPool: closeMySQLPool,
 }
