@@ -1,10 +1,6 @@
 const ld = require('lodash')
-import Debug from 'debug'
 import moment from 'moment'
 
-const debug = Debug('od.param')
-
-// TODO: remove to the outside of the package
 export function ensure (expr, errorObject, errorData = {}) {
   if (!expr) {
     const origErrorObject = errorObject
