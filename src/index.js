@@ -198,10 +198,15 @@ function runInExpressContext (runLogic, req, res, next) {
         msg = errorObject
         code = -1
         status = 400
-      } else {
+      } else if (ld.isObject(errorObject)) {
         msg = errorObject.msg
         code = errorObject.code
         status = errorObject.status
+      } else {
+        console.error(`ErrorObject is unknown type : ${typeof errorObject}`)
+        msg = 'Internal error'
+        code = -1042
+        status = 500
       }
 
       const err = new Error(msg)
@@ -217,6 +222,10 @@ function runInExpressContext (runLogic, req, res, next) {
   }
   context.ensure.nonEmptyString = function (value, errorObject) {
     context.ensure(ld.isString(value) && !ld.isEmpty(value), errorObject)
+  }
+  context.ensure.bool = (val, errorObject) => {
+    context.ensure(ld.isBoolean(val), errorObject)
+    return val
   }
 
   context.sanitize = {
