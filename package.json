@@ -6,7 +6,8 @@
   "scripts": {
     "test": "jest",
     "test:watch": "jest --watchAll",
-    "build": "babel src -d lib"
+    "build": "babel src -d lib",
+    "build:watch": "babel src -d lib -w"
   },
   "author": "",
   "license": "ISC",
