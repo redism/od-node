@@ -84,11 +84,11 @@ const objectSanitizer = function ({ defError }) {
       let converted = ld.cloneDeep(defaultValue)
       ensure(ld.isObject(value), errorObject, { value })
       for (let prop in value) {
-        // console.log(`Processing ${prop}`)
+        // console.log(`Processing ${prop} : ${obj[ prop ]}`)
         if (value.hasOwnProperty(prop) && obj.hasOwnProperty(prop)) {
           converted[ prop ] = obj[ prop ](value[ prop ], errorObject)
         } else {
-          obj[ prop ] = value[ prop ]
+          converted[ prop ] = value[ prop ]
         }
       }
       return converted
