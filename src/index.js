@@ -6,7 +6,7 @@ const knex = Knex({ client: 'mysql' }) // use only for query-builder
 const fs = require('fs')
 const moment = require('moment')
 import jwt from 'jsonwebtoken'
-import { sanitizer, ensure } from './param'
+import { sanitizer as Sanitizer, ensure } from 'overdosed-js'
 import { connectMySQLPool } from './mysql'
 
 let getMySQLConnection
@@ -229,7 +229,7 @@ function runInExpressContext (di, runLogic, req, res, next) {
   context.setSignedCookie = (name, value) => res.cookie(name, value, { signed: true })
   context.requestBody = req.body
   context.ensure = ensure
-  context.sanitizer = sanitizer({ defError: ({ value }) => `Invalid param with value : ${value}` })
+  context.sanitizer = Sanitizer({ defError: ({ value }) => `Invalid param with value : ${value}` })
   context.di = di
 
   runLogic(context)
@@ -304,7 +304,7 @@ module.exports = exports = {
   moveFile: moveFile,
   moment: moment,
   mysql: mysql,
-  sanitizer: sanitizer,
+  sanitizer: Sanitizer,
   ensure: ensure,
   initMySQLPool: initMySQLPool,
   closeMySQLPool: closeMySQLPool,
