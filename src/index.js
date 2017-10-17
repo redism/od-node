@@ -220,7 +220,7 @@ function runInLambdaContext (runLogic, e, ctx, cb) {
     .finally(() => { return context.runDeferred() })
 }
 
-function runInExpressContext (runLogic, req, res, next) {
+function runInExpressContext (di, runLogic, req, res, next) {
   const context = createContext(true)
   context.express = { req, res }
 
@@ -230,6 +230,7 @@ function runInExpressContext (runLogic, req, res, next) {
   context.requestBody = req.body
   context.ensure = ensure
   context.sanitizer = sanitizer({ defError: ({ value }) => `Invalid param with value : ${value}` })
+  context.di = di
 
   runLogic(context)
     .then(ret => res.json({ data: ret }), next)
