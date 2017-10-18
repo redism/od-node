@@ -6,6 +6,7 @@ const knex = Knex({ client: 'mysql' }) // use only for query-builder
 const fs = require('fs')
 const moment = require('moment')
 import jwt from 'jsonwebtoken'
+import _ from 'lodash'
 import { sanitizer as Sanitizer, ensure } from 'overdosed-js'
 import { connectMySQLPool } from './mysql'
 
@@ -220,6 +221,14 @@ function runInLambdaContext (runLogic, e, ctx, cb) {
     .finally(() => { return context.runDeferred() })
 }
 
+function getParamFromRequest (req, keys) {
+  if (_.isArray(keys)) {
+    return keys.map(key => req.params[ key ])
+  } else {
+    return req.params[ keys ]
+  }
+}
+
 function runInExpressContext (di, runLogic, req, res, next) {
   const context = createContext(true)
   context.express = { req, res }
@@ -231,6 +240,7 @@ function runInExpressContext (di, runLogic, req, res, next) {
   context.ensure = ensure
   context.sanitizer = Sanitizer({ defError: ({ value }) => `Invalid param with value : ${value}` })
   context.di = di
+  context.getParam = (...args) => getParamFromRequest(req, ...args)
 
   runLogic(context)
     .then(ret => res.json({ data: ret }), next)
