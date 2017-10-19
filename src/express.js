@@ -15,6 +15,7 @@ export default function ODApp (config = {}) {
   const storageDefinitions = []
   const di = {
     options: Object.assign({
+      PORT: 8082,
       MYSQL: {},
       COOKIE_SECRET: 'od-cookie-secret',
       ENABLE_CORS: false,
@@ -128,7 +129,7 @@ export default function ODApp (config = {}) {
         if (noListen) {
           return Promise.resolve()
         }
-        return new Promise(resolve => app.listen(options.port || 8082, resolve))
+        return new Promise(resolve => app.listen(options.PORT || 8082, resolve))
       },
     },
     stop: {
