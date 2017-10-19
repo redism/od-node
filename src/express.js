@@ -4,15 +4,15 @@ import morgan from 'morgan'
 import cookieParser from 'cookie-parser'
 import bodyParser from 'body-parser'
 
-import Util from './utils'
 import { initMySQLPool } from './mysql'
 import { ContextWrapper } from './server-context'
 import { handlerDefiner } from './handler'
+import { storageDefiner } from './storage/definition'
 
 export default function ODApp (config = {}) {
-  const util = Util(config)
   const app = express()
   const handlerDefinitions = []
+  const storageDefinitions = []
   const di = {
     options: Object.assign({
       MYSQL: {},
@@ -20,13 +20,15 @@ export default function ODApp (config = {}) {
       ENABLE_CORS: false,
       MORGAN: '',
       BODY_PARSER_JSON_LIMIT: '1mb',
+      STORAGE: {},
     }, config),
     express: app,
+    storage: {}, // name - driver pair
   }
 
   const debug = Debug('od:ODApp')
-  const paramError = util.paramError.bind(util)
-  const defineHandler = handlerDefiner(config)
+  const defineHandler = handlerDefiner(di.options)
+  const defineStorage = storageDefiner(di.options.STORAGE)
 
   return Object.create(null, {
     di: {
@@ -41,6 +43,15 @@ export default function ODApp (config = {}) {
         const definer = defineHandler(name)
         cb(definer)
         handlerDefinitions.push(definer.build())
+      },
+    },
+    defineStorage: {
+      writable: false,
+      configurable: true,
+      value: function (name, cb) {
+        const definer = defineStorage(name)
+        cb && cb(definer)
+        storageDefinitions.push(definer.build())
       },
     },
     run: {
@@ -71,6 +82,16 @@ export default function ODApp (config = {}) {
         options.MORGAN && app.use(morgan(options.MORGAN))
         app.use(bodyParser.json({ limit: options.BODY_PARSER_JSON_LIMIT }))
         app.use(bodyParser.urlencoded({ extended: true }))
+
+        //
+        // Initialize Storage
+        //
+        await Promise.map(storageDefinitions, definition => {
+          const { name, driver } = definition
+          debug(`Initializing storage driver for ${name}`)
+          di.storage[ name ] = driver
+          return driver.init()
+        })
 
         //
         // Initialize Context

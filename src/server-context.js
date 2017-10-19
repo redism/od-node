@@ -118,7 +118,7 @@ export function ContextWrapper (options = {}) {
                   res.status(200).json({ data: response })
                 }, ex => {
                   // check handled error here
-                  // console.log(156, ex) // TODO: 왜 default error handler 를 타지 않는가?
+                  // console.log(`Handler error`, ex) // TODO: 왜 default error handler 를 타지 않는가?
                   next(ex)
                 })
                 .finally(() => {
