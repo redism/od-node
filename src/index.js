@@ -3,11 +3,9 @@ const mysql = require('mysql')
 const bcrypt = require('bcrypt')
 const Knex = require('knex')
 const knex = Knex({ client: 'mysql' }) // use only for query-builder
-const fs = require('fs')
 const moment = require('moment')
 import jwt from 'jsonwebtoken'
 import { sanitizer as Sanitizer, ensure } from 'overdosed-js'
-import { connectMySQLPool } from './mysql'
 import ODApp from './express'
 
 let getMySQLConnection
@@ -63,35 +61,6 @@ function getMySQLConnectionLambda (options) {
  */
 getMySQLConnectionLambda.setOptions = function (options) {
   getMySQLConnection.options = options
-}
-
-getMySQLConnection = getMySQLConnectionLambda
-
-let globalMySQLPool
-
-async function initMySQLPool (options) {
-  // TODO: merge with initLambda...
-  if (options === undefined || options === null) {
-    if (getMySQLConnection.options) {
-      options = getMySQLConnection.options
-    } else {
-      options = {
-        host: process.env.mysql_host,
-        user: process.env.mysql_user,
-        password: process.env.mysql_password,
-        port: parseInt(process.env.mysql_port, 10),
-        database: process.env.mysql_database,
-        debug: parseInt(process.env.mysql_debug, 10) === 1,
-      }
-    }
-  }
-
-  globalMySQLPool = await connectMySQLPool(options)
-  getMySQLConnection = () => globalMySQLPool
-}
-
-async function closeMySQLPool () {
-  return globalMySQLPool.end()
 }
 
 /**
@@ -172,33 +141,11 @@ const jwtUtil = {
   decode: decodeJWTToken,
 }
 
-function NIY (name) {
-  throw new Error(`${name} NIY.`)
-}
-
-function runInLambdaContext (runLogic, e, ctx, cb) {
-  const context = createContext()
-  context.getSignedCookie = name => NIY('runInLambdaContext.getSignedCookie')
-  runLogic(context)
-    .then(res => cb(null, { data: res }), err => cb(err, null))
-    .finally(() => { return context.runDeferred() })
-}
-
-function runInTestContext (mod) {
-  return async () => {
-    const context = createContext()
-    return mod.runLogic(context)
-      .finally(() => { return context.runDeferred() })
-  }
-}
-
 module.exports = exports = {
-  getMySQLConnection: getMySQLConnection,
   genSaltedPassword: genSaltedPassword,
   checkSaltedPassword: checkSaltedPassword,
   knex: knex,
   Knex: Knex,
-  runInLambdaContext: runInLambdaContext,
   jwtUtil,
   moment: moment,
   mysql: mysql,
