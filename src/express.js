@@ -1,22 +1,18 @@
-import _ from 'lodash'
 import express from 'express'
 import Debug from 'debug'
 import morgan from 'morgan'
 import cookieParser from 'cookie-parser'
 import bodyParser from 'body-parser'
 
-import { sanitizer as Sanitizer } from 'overdosed-js'
 import Util from './utils'
 import { initMySQLPool } from './mysql'
-import ContextWrapper from './server-context'
+import { ContextWrapper } from './server-context'
 import { handlerDefiner } from './handler'
-
-const sanitizer = Sanitizer()
 
 export default function ODApp (config = {}) {
   const util = Util(config)
   const app = express()
-  const expressMiddlewares = []
+  const handlerDefinitions = []
   const di = {
     options: Object.assign({
       MYSQL: {},
@@ -27,21 +23,10 @@ export default function ODApp (config = {}) {
     }, config),
     express: app,
   }
-  const debug = Debug('od::server')
-  const paramError = util.paramError.bind(util)
 
-  const ensureMethod = sanitizer.chain(
-    sanitizer.trim(),
-    sanitizer.pass(v => v.toLowerCase()),
-    sanitizer.oneOf([ 'get', 'post', 'delete' ]),
-    paramError('express method'),
-  )
-  const ensureURL = sanitizer.nonEmptyString(paramError('express url'))
-  const ensureHandler =
-    sanitizer.anyOf(
-      sanitizer.ensure(s => _.isFunction(s), paramError('express handler')),
-      sanitizer.ensure(s => _.isObject(s), paramError('express handler')),    // TODO: check handler definition
-    )
+  const debug = Debug('od:ODApp')
+  const paramError = util.paramError.bind(util)
+  const defineHandler = handlerDefiner(config)
 
   return Object.create(null, {
     di: {
@@ -52,16 +37,10 @@ export default function ODApp (config = {}) {
     defineHandler: {
       writable: false,
       configurable: false,
-      value: handlerDefiner(config),
-    },
-    express: {
-      writable: false,
-      configurable: false,
-      value: function (method, url, handler) {
-        ensureMethod(method)
-        ensureURL(url)
-        ensureHandler(handler)
-        expressMiddlewares.push([ method, url, handler ])
+      value: function (name, cb) {
+        const definer = defineHandler(name)
+        cb(definer)
+        handlerDefinitions.push(definer.build())
       },
     },
     run: {
@@ -98,8 +77,10 @@ export default function ODApp (config = {}) {
         //
         const contextWrapper = ContextWrapper(options)
 
-        expressMiddlewares.forEach(([ method, url, handler ]) => {
-          app[ method ](url, contextWrapper.wrap(di, handler))
+        handlerDefinitions.forEach(definition => {
+          const { endpoint: { url, method }, name } = definition
+          debug(`Mounting ${name} for [${method}] ${url}`)
+          app[ method ](url, contextWrapper.wrap(di, definition))
         })
 
         //

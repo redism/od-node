@@ -1,6 +1,11 @@
 export function handlerDefiner (options) {
   return function defineHandler (name) {
-    const d = { name, options: {} }
+    const d = {
+      name,
+      handler: null,
+      options: {},
+      endpoint: {},
+    }
 
     return Object.create(null, {
       name: {
@@ -27,10 +32,18 @@ export function handlerDefiner (options) {
           return this
         }
       },
+      endpoint: {
+        configurable: false,
+        writable: false,
+        value: function (method, url) {
+          d.endpoint = { method, url }
+          return this
+        }
+      },
       build: {
         configurable: false,
         writable: false,
-        value: () => d
+        value: () => d,
       },
     })
   }

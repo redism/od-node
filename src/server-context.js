@@ -6,97 +6,102 @@
 import { ensure } from 'overdosed-js'
 import _ from 'lodash'
 
-function contexter (options) {
+function contexter (di, definition, options) {
   if (options.type !== 'express') { // we only support express node.js server for now.
     throw new Error(`Unknown type ${options.type}`)
   }
 
   const takeIf = (v, f) => (v === undefined ? f() : v)
 
-  return function (di, handlerOptions = {}, req, res) {
-    let fileModuleInitialized = false
-    return Object.create({}, {
-      di: { configurable: false, writable: false, value: di },
-      getMySQLConnection: {
-        configurable: false,
-        writable: false,
-        value: () => di.mysql,
-      },
-      ensure: { configurable: false, writable: false, value: ensure },
-      getParam: {
-        configurable: false,
-        writable: false,
-        value: function (keys) {
-          if (_.isArray(keys)) {
-            return keys.map(key => this.getParam(key))
-          } else {
-            return takeIf(req.params[ keys ],
-              () => req.body[ keys ]
-            )
+  const contextPerDefinition = Object.create(null, {
+    di: { configurable: false, writable: false, value: di },
+    getMySQLConnection: {
+      configurable: false,
+      writable: false,
+      value: () => di.mysql,
+    },
+    ensure: { configurable: false, writable: false, value: ensure },
+    getParam: {
+      configurable: false,
+      writable: false,
+      value: function (keys) {
+        if (_.isArray(keys)) {
+          return keys.map(key => this.getParam(key))
+        } else {
+          return takeIf(this.express.req.params[ keys ],
+            () => this.express.req.body[ keys ]
+          )
+        }
+      }
+    },
+    getParamObject: {
+      configurable: false,
+      writable: false,
+      value: function (keys) {
+        const ret = {}
+        keys.forEach(k => {
+          const v = this.getParam(k)
+          if (v !== undefined) {
+            ret[ k ] = v
           }
-        }
-      },
-      getParamObject: {
-        configurable: false,
-        writable: false,
-        value: function (keys) {
-          const ret = {}
-          keys.forEach(k => {
-            const v = this.getParam(k)
-            if (v !== undefined) {
-              ret[ k ] = v
-            }
-          })
-          return ret
-        }
-      },
-      getFiles: {
-        configurable: false,
-        writable: false,
-        value: async function getFiles (keys) {
-          if (!fileModuleInitialized) {
-            ensure(handlerOptions.multer, 'multer not defined.')
-            await new Promise((resolve, reject) => {
-              handlerOptions.multer(req, res, err => {
-                err ? reject(err) : resolve()
-              })
+        })
+        return ret
+      }
+    },
+    getFiles: {
+      configurable: false,
+      writable: false,
+      value: async function getFiles (keys) {
+        if (!this.fileModuleInitialized) {
+          ensure(definition.options.multer, 'multer not defined.')
+          await new Promise((resolve, reject) => {
+            definition.options.multer(this.express.req, this.express.res, err => {
+              err ? reject(err) : resolve()
             })
-            fileModuleInitialized = true
-          }
-
-          if (_.isArray(keys)) {
-            const files = await Promise.map(keys, key => this.getFiles(key))
-            return files.map(v => _.isArray(v) ? v[ 0 ] : v)
-          } else {
-            return req.files[ keys ]
-          }
+          })
+          this.fileModuleInitialized = true
         }
-      },
-      getSignedCookie: {
+
+        if (_.isArray(keys)) {
+          const files = await Promise.map(keys, key => this.getFiles(key))
+          return files.map(v => _.isArray(v) ? v[ 0 ] : v)
+        } else {
+          return this.express.req.files[ keys ]
+        }
+      }
+    },
+    getSignedCookie: {
+      configurable: false,
+      writable: false,
+      value: function (name) {
+        return this.express.req.signedCookies[ name ]
+      }
+    },
+    setSignedCookie: {
+      configurable: false,
+      writable: false,
+      value: function (name, value) {
+        this.express.res.cookie(name, value, { signed: true })
+      }
+    },
+  })
+
+  return function createContext (req, res) {
+    return Object.create(contextPerDefinition, {
+      fileModuleInitialized: { configurable: false, writable: true, value: false },
+      express: {
         configurable: false,
         writable: false,
-        value: name => req.signedCookies[ name ],
-      },
-      setSignedCookie: {
-        configurable: false,
-        writable: false,
-        value: (name, value) => res.cookie(name, value, { signed: true }),
+        value: { req, res }
       },
     })
   }
 }
 
-export default function ContextWrapper (options = {}) {
+export function ContextWrapper (options = {}) {
   options = Object.assign({
     type: 'express',
   }, options)
-
-  const createContext = contexter(options)
-
-  // TODO: refactor with strict type?
-  const isHandlerDefinition = obj => {
-    return _.isObject(obj) && _.isFunction(obj.handler)
-  }
 
   switch (options.type) {
     case 'express':
@@ -104,20 +109,13 @@ export default function ContextWrapper (options = {}) {
         wrap: {
           writable: false,
           configurable: false,
-          value: function (di, _handler) {
-            let handler, handlerOptions = {}
-            if (isHandlerDefinition(_handler)) {
-              handler = _handler.handler
-              handlerOptions = _handler.options
-            } else {
-              handler = _handler
-            }
-
+          value: function (di, definition) {
+            const createContextPerDefinition = contexter(di, definition, options)
             return function (req, res, next) {
-              const context = createContext(di, handlerOptions, req, res)
-              Promise.resolve(handler(context))
+              const context = createContextPerDefinition(req, res)
+              Promise.resolve(definition.handler(context))
                 .then(response => {
-                  res.json({ data: response })
+                  res.status(200).json({ data: response })
                 }, ex => {
                   // check handled error here
                   // console.log(156, ex) // TODO: 왜 default error handler 를 타지 않는가?
