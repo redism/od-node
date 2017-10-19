@@ -1,4 +1,6 @@
 // TODO: 이제 좀 더 제대로 모듈화. (ODServer 라는 패키지 만들기)
+import { upsertSQL } from './mysql'
+
 const mysql = require('mysql')
 const bcrypt = require('bcrypt')
 const Knex = require('knex')
@@ -148,6 +150,7 @@ module.exports = exports = {
   Knex: Knex,
   jwtUtil,
   moment: moment,
+  upsertSQL: upsertSQL,
   mysql: mysql,
   sanitizer: Sanitizer,
   ensure: ensure,

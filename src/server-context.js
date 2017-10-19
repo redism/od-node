@@ -115,7 +115,7 @@ export function ContextWrapper (options = {}) {
               const context = createContextPerDefinition(req, res)
               Promise.resolve(definition.handler(context))
                 .then(response => {
-                  res.status(200).json({ data: response })
+                  res.json({ data: response })
                 }, ex => {
                   // check handled error here
                   // console.log(`Handler error`, ex) // TODO: 왜 default error handler 를 타지 않는가?

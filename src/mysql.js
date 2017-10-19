@@ -1,4 +1,8 @@
+import _ from 'lodash'
 import mysql from 'mysql'
+
+const Knex = require('knex')
+const knex = Knex({ client: 'mysql' }) // use only for query-builder
 import Debug from 'debug'
 
 const debug = Debug('od.mysql')
@@ -174,4 +178,25 @@ const mysqlDefaultOptions = {
 export async function initMySQLPool (options = {}) {
   options = Object.assign(mysqlDefaultOptions, options)
   return connectMySQLPool(options)
+}
+
+/**
+ * Generate multiple upsert query. (requires toString() to build query)
+ *
+ * @param tableName {string}
+ * @param dataInsert {object|array}
+ * @param [fieldsToUpdate] {array}
+ * @return {Any}
+ */
+export function upsertSQL (tableName, dataInsert, fieldsToUpdate) {
+  if (fieldsToUpdate === undefined) {
+    if (_.isArray(dataInsert)) {
+      fieldsToUpdate = Object.getOwnPropertyNames(dataInsert[ 0 ])
+    } else {
+      fieldsToUpdate = Object.getOwnPropertyNames(dataInsert)
+    }
+  }
+
+  return knex.raw(knex(tableName).insert(dataInsert).toQuery() + ' ON DUPLICATE KEY UPDATE ' +
+    fieldsToUpdate.map(field => `${field}=VALUES(${field})`).join(', '))
 }
