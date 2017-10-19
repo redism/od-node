@@ -6,43 +6,6 @@
 import { ensure } from 'overdosed-js'
 import _ from 'lodash'
 
-// function createContext (usingMySQLPool) {
-//   const deferred = []
-//
-//   function defer (fn) {
-//     deferred.push(fn)
-//   }
-//
-//   async function runDeferred () {
-//     for (const index in deferred) {
-//       try {
-//         await Promise.resolve(deferred[ index ]())
-//       } catch (ex) {
-//         console.error(`Error during running deferred.`)
-//         console.error(ex)
-//       }
-//     }
-//   }
-//
-//   if (usingMySQLPool) {
-//     return {
-//       defer,
-//       runDeferred,
-//       getMySQLConnection,
-//     }
-//   }
-//
-//   return {
-//     defer,
-//     runDeferred,
-//     getMySQLConnection: (options) => {
-//       const conn = getMySQLConnection(options)
-//       defer(() => {conn.end()})
-//       return conn
-//     }
-//   }
-// }
-
 function contexter (options) {
   if (options.type !== 'express') { // we only support express node.js server for now.
     throw new Error(`Unknown type ${options.type}`)

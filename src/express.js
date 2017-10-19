@@ -9,6 +9,7 @@ import { sanitizer as Sanitizer } from 'overdosed-js'
 import Util from './utils'
 import { initMySQLPool } from './mysql'
 import ContextWrapper from './server-context'
+import { handlerDefiner } from './handler'
 
 const sanitizer = Sanitizer()
 
@@ -47,6 +48,11 @@ export default function ODApp (config = {}) {
       writable: false,
       configurable: true,
       value: di,
+    },
+    defineHandler: {
+      writable: false,
+      configurable: false,
+      value: handlerDefiner(config),
     },
     express: {
       writable: false,
