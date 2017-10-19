@@ -161,3 +161,17 @@ export async function connectMySQLPool (connectionOption) {
     }
   }
 }
+
+const mysqlDefaultOptions = {
+  host: process.env.mysql_host || '127.0.0.1',
+  user: process.env.mysql_user || 'root',
+  password: process.env.mysql_password || '',
+  port: parseInt(process.env.mysql_port, 10) || 3306,
+  database: process.env.mysql_database || 'test',
+  debug: parseInt(process.env.mysql_debug, 10) === 1,
+}
+
+export async function initMySQLPool (options = {}) {
+  options = Object.assign(mysqlDefaultOptions, options)
+  return connectMySQLPool(options)
+}

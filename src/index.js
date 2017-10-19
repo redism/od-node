@@ -6,9 +6,9 @@ const knex = Knex({ client: 'mysql' }) // use only for query-builder
 const fs = require('fs')
 const moment = require('moment')
 import jwt from 'jsonwebtoken'
-import _ from 'lodash'
 import { sanitizer as Sanitizer, ensure } from 'overdosed-js'
 import { connectMySQLPool } from './mysql'
+import ODApp from './express'
 
 let getMySQLConnection
 
@@ -172,43 +172,6 @@ const jwtUtil = {
   decode: decodeJWTToken,
 }
 
-function createContext (usingMySQLPool) {
-  const deferred = []
-
-  function defer (fn) {
-    deferred.push(fn)
-  }
-
-  async function runDeferred () {
-    for (const index in deferred) {
-      try {
-        await Promise.resolve(deferred[ index ]())
-      } catch (ex) {
-        console.error(`Error during running deferred.`)
-        console.error(ex)
-      }
-    }
-  }
-
-  if (usingMySQLPool) {
-    return {
-      defer,
-      runDeferred,
-      getMySQLConnection,
-    }
-  }
-
-  return {
-    defer,
-    runDeferred,
-    getMySQLConnection: (options) => {
-      const conn = getMySQLConnection(options)
-      defer(() => {conn.end()})
-      return conn
-    }
-  }
-}
-
 function NIY (name) {
   throw new Error(`${name} NIY.`)
 }
@@ -218,32 +181,6 @@ function runInLambdaContext (runLogic, e, ctx, cb) {
   context.getSignedCookie = name => NIY('runInLambdaContext.getSignedCookie')
   runLogic(context)
     .then(res => cb(null, { data: res }), err => cb(err, null))
-    .finally(() => { return context.runDeferred() })
-}
-
-function getParamFromRequest (req, keys) {
-  if (_.isArray(keys)) {
-    return keys.map(key => req.params[ key ])
-  } else {
-    return req.params[ keys ]
-  }
-}
-
-function runInExpressContext (di, runLogic, req, res, next) {
-  const context = createContext(true)
-  context.express = { req, res }
-
-  // TODO: extract these out.
-  context.getSignedCookie = name => req.signedCookies[ name ]
-  context.setSignedCookie = (name, value) => res.cookie(name, value, { signed: true })
-  context.requestBody = req.body
-  context.ensure = ensure
-  context.sanitizer = Sanitizer({ defError: ({ value }) => `Invalid param with value : ${value}` })
-  context.di = di
-  context.getParam = (...args) => getParamFromRequest(req, ...args)
-
-  runLogic(context)
-    .then(ret => res.json({ data: ret }), next)
     .finally(() => { return context.runDeferred() })
 }
 
@@ -307,8 +244,6 @@ module.exports = exports = {
   knex: knex,
   Knex: Knex,
   runInLambdaContext: runInLambdaContext,
-  runInExpressContext: runInExpressContext,
-  runInTestContext: runInTestContext,
   jwtUtil,
   copyFile: copyFile,
   moveFile: moveFile,
@@ -316,6 +251,5 @@ module.exports = exports = {
   mysql: mysql,
   sanitizer: Sanitizer,
   ensure: ensure,
-  initMySQLPool: initMySQLPool,
-  closeMySQLPool: closeMySQLPool,
+  ODApp: ODApp,
 }
