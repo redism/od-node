@@ -1,22 +1,4 @@
-/**
- *
- * Utilities. configurable using {config} injected on creation.
- *
- */
 import fs from 'fs'
-
-// TODO: 있을 곳이 여기가 아니다. 이거 치우자.
-export default function utils (config = {}) {
-  return Object.create(null, {
-    paramError: {
-      writable: false,
-      configurable: false,
-      value: function (name) {
-        return { error: ({ value }) => `${name} parameter error : ${value} / ${typeof value}` }
-      },
-    }
-  })
-}
 
 /**
  * 파일 복사를 수행합니다.
