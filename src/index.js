@@ -9,6 +9,7 @@ const moment = require('moment')
 import jwt from 'jsonwebtoken'
 import { sanitizer as Sanitizer, ensure } from 'overdosed-js'
 import ODApp from './express'
+import { isDeadLockError, isForeignKeyError } from './mysql'
 
 let getMySQLConnection
 
@@ -155,4 +156,6 @@ module.exports = exports = {
   sanitizer: Sanitizer,
   ensure: ensure,
   ODApp: ODApp,
+  isDeadLockError,
+  isForeignKeyError,
 }

@@ -12,6 +12,7 @@ const DeadlockErrorObject = msg => { return { code: 5781, status: 500, msg } }
 const UnknownDBErrorObject = msg => { return { code: 5811, status: 500, msg }}
 
 export const isDeadLockError = err => err && err.errno && err.errno === 1213
+export const isForeignKeyError = err => err && err.errno && err.errno === 1452
 
 export async function connectMySQLPool (connectionOption) {
   const pool = mysql.createPool(connectionOption)

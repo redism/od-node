@@ -3,7 +3,7 @@
  * Context to use from server handlers
  *
  **/
-import { ensure } from 'overdosed-js'
+import { ensure, sanitizer, isObjectSanitizer, getSanitizerOptions } from 'overdosed-js'
 import _ from 'lodash'
 import Debug from 'debug'
 
@@ -43,13 +43,19 @@ function contexter (di, definition, options) {
       writable: false,
       value: function (keys) {
         const ret = {}
+        let wrapper = v => v
+        if (isObjectSanitizer(keys)) { // for convenience, if sanitizer.object is passed, use that.
+          wrapper = keys
+          keys = getSanitizerOptions(keys).keys
+        }
+
         keys.forEach(k => {
           const v = this.getParam(k)
           if (v !== undefined) {
             ret[ k ] = v
           }
         })
-        return ret
+        return wrapper(ret)
       }
     },
     getFiles: {
