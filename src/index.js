@@ -10,6 +10,7 @@ import jwt from 'jsonwebtoken'
 import { sanitizer as Sanitizer, ensure } from 'overdosed-js'
 import ODApp from './express'
 import { isDeadLockError, isForeignKeyError } from './mysql'
+import { handlerMaker } from './handler'
 
 let getMySQLConnection
 
@@ -158,4 +159,5 @@ module.exports = exports = {
   ODApp: ODApp,
   isDeadLockError,
   isForeignKeyError,
+  handlerMaker,
 }
