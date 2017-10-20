@@ -5,6 +5,7 @@
  **/
 import { ensure } from 'overdosed-js'
 import _ from 'lodash'
+import Debug from 'debug'
 
 function contexter (di, definition, options) {
   if (options.type !== 'express') { // we only support express node.js server for now.
@@ -19,6 +20,9 @@ function contexter (di, definition, options) {
       configurable: false,
       writable: false,
       value: () => di.mysql,
+    },
+    debug: {
+      configurable: true, writable: false, value: Debug(`od:${definition.name}`)
     },
     ensure: { configurable: false, writable: false, value: ensure },
     getParam: {
