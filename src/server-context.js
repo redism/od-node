@@ -33,7 +33,8 @@ function contexter (di, definition, options) {
           return keys.map(key => this.getParam(key))
         } else {
           return takeIf(this.express.req.params[ keys ],
-            () => this.express.req.body[ keys ]
+            () => takeIf(this.express.req.body[ keys ],
+              () => this.express.req.query[ keys ])
           )
         }
       }
