@@ -8,7 +8,7 @@ import { moveFile } from '../utils'
 
 const driverPrototype = {
   init: async function () {
-    const storagePath = path.join(this._basePath, name)
+    const storagePath = path.join(this._basePath, this._name)
 
     this._debug(`Creating storage path : ${storagePath}`)
     await new Promise((resolve, reject) => {
@@ -34,7 +34,7 @@ const driverPrototype = {
     this._ensure.nonEmptyString(imagePath, this._paramError('Invalid image path'))
 
     const imageId = uuid()
-    const finalImagePath = path.join(this._basePath, name, `${imageId}.jpg`)
+    const finalImagePath = path.join(this._basePath, this._name, `${imageId}.jpg`)
     await moveFile(imagePath, finalImagePath)
 
     return imageId
@@ -44,7 +44,8 @@ const driverPrototype = {
 export default function createLocalStorageDriver (options, definition) {
 
   // TODO: sanitize options
-  const { name, path } = options
+  const { path } = options
+  const { name } = definition
 
   return Object.create(driverPrototype, {
     // TODO: how to pass along _ensure, _paramError, _sanitizer, ....

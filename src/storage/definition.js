@@ -1,14 +1,4 @@
-import { sanitizer as Sanitizer } from 'overdosed-js'
-
-const sanitizer = Sanitizer()
-
-const validStorageConfig = sanitizer.object({
-  name: sanitizer.nonEmptyString(),
-})
-
 export function storageDefiner (options = {}) {
-  validStorageConfig(options)
-
   return function defineStorage (name) {
     return Object.create(null, {
       /**
@@ -26,7 +16,7 @@ export function storageDefiner (options = {}) {
               default:
                 throw new Error(`Unknown storage type : ${type}`)
             }
-          })(options)
+          })(options, { name })
           return { name, driver }
         },
       },
