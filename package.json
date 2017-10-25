@@ -24,6 +24,7 @@
     "babel-cli": "6.26.0",
     "babel-plugin-transform-async-to-generator": "^6.24.1",
     "babel-preset-bluebird": "^1.0.1",
+    "babel-preset-env": "1.6.1",
     "babel-preset-node6": "^11.0.0",
     "jest": "21.2.1"
   }
