@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/overdosed-node-lib.iml" filepath="$PROJECT_DIR$/.idea/overdosed-node-lib.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/od-node.iml" filepath="$PROJECT_DIR$/.idea/od-node.iml" />
     </modules>
   </component>
 </project>

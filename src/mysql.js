@@ -1,15 +1,14 @@
 import _ from 'lodash'
 import mysql from 'mysql'
-
-const Knex = require('knex')
-const knex = Knex({ client: 'mysql' }) // use only for query-builder
+import Knex from 'knex'
 import Debug from 'debug'
 
+const knex = Knex({ client: 'mysql' }) // use only for query-builder
 const debug = Debug('od.mysql')
 
 const DBErrorObject = msg => { return { code: 6738, status: 500, msg } }
 const DeadlockErrorObject = msg => { return { code: 5781, status: 500, msg } }
-const UnknownDBErrorObject = msg => { return { code: 5811, status: 500, msg }}
+const UnknownDBErrorObject = msg => { return { code: 5811, status: 500, msg } }
 
 export const isDeadLockError = err => err && err.errno && err.errno === 1213
 export const isForeignKeyError = err => err && err.errno && err.errno === 1452
@@ -114,7 +113,7 @@ export async function connectMySQLPool (connectionOption) {
                   release()
                   connection.rollback(resolve)
                 })
-              },
+              }
             }
             resolve(transactionObject)
           })
@@ -136,7 +135,7 @@ export async function connectMySQLPool (connectionOption) {
         retry: 5,
         ignoreError: false,
         errorHandler: null,
-        deadlockInterval: 100,
+        deadlockInterval: 100
       }, options || {})
 
       const trans = await this.beginTransaction(context)
@@ -173,7 +172,7 @@ const mysqlDefaultOptions = {
   password: process.env.mysql_password || '',
   port: parseInt(process.env.mysql_port, 10) || 3306,
   database: process.env.mysql_database || 'test',
-  debug: parseInt(process.env.mysql_debug, 10) === 1,
+  debug: parseInt(process.env.mysql_debug, 10) === 1
 }
 
 export async function initMySQLPool (options = {}) {

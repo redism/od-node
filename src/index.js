@@ -1,16 +1,14 @@
-// TODO: 이제 좀 더 제대로 모듈화. (ODServer 라는 패키지 만들기)
-import { upsertSQL } from './mysql'
-
-const mysql = require('mysql')
-const bcrypt = require('bcrypt')
-const Knex = require('knex')
-const knex = Knex({ client: 'mysql' }) // use only for query-builder
-const moment = require('moment')
+import mysql from 'mysql'
+import bcrypt from 'bcrypt'
+import Knex from 'knex'
+import moment from 'moment'
 import jwt from 'jsonwebtoken'
-import { sanitizer as Sanitizer, ensure } from 'overdosed-js'
+import { sanitizer as Sanitizer, ensure } from 'od-js'
 import ODApp from './express'
-import { isDeadLockError, isForeignKeyError } from './mysql'
+import { upsertSQL, isDeadLockError, isForeignKeyError } from './mysql'
 import { handlerMaker } from './handler'
+
+const knex = Knex({ client: 'mysql' }) // use only for query-builder
 
 let getMySQLConnection
 
@@ -40,7 +38,7 @@ function getMySQLConnectionLambda (options) {
         password: process.env.mysql_password,
         port: parseInt(process.env.mysql_port, 10),
         database: process.env.mysql_database,
-        debug: parseInt(process.env.mysql_debug, 10) === 1,
+        debug: parseInt(process.env.mysql_debug, 10) === 1
       }
     }
   }
@@ -100,7 +98,7 @@ async function genSaltedPassword (pw, iteration = 10) {
  */
 async function checkSaltedPassword (pw, salted) {
   return new Promise((resolve, reject) => {
-    bcrypt.compare(pw, salted, (err, res) => {err ? reject(err) : resolve(res)})
+    bcrypt.compare(pw, salted, (err, res) => { err ? reject(err) : resolve(res) })
   })
 }
 
@@ -142,7 +140,7 @@ async function decodeJWTToken (secret, token) {
 
 const jwtUtil = {
   encode: encodeJWTToken,
-  decode: decodeJWTToken,
+  decode: decodeJWTToken
 }
 
 module.exports = exports = {
@@ -159,5 +157,5 @@ module.exports = exports = {
   ODApp: ODApp,
   isDeadLockError,
   isForeignKeyError,
-  handlerMaker,
+  handlerMaker
 }

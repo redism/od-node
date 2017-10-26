@@ -9,15 +9,15 @@ import fs from 'fs'
  */
 export function copyFile (oldPath, newPath) {
   return new Promise((resolve, reject) => {
-    const readStream = fs.createReadStream(oldPath);
-    const writeStream = fs.createWriteStream(newPath);
+    const readStream = fs.createReadStream(oldPath)
+    const writeStream = fs.createWriteStream(newPath)
 
     readStream.on('error', reject)
     writeStream.on('error', reject)
 
     readStream.on('close', function () {
       fs.unlink(oldPath, resolve)
-    });
+    })
 
     readStream.pipe(writeStream)
   })

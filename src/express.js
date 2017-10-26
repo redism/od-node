@@ -21,10 +21,10 @@ export default function ODApp (config = {}) {
       ENABLE_CORS: false,
       MORGAN: '',
       BODY_PARSER_JSON_LIMIT: '1mb',
-      STORAGE: {},
+      STORAGE: {}
     }, config),
     express: app,
-    storage: {}, // name - driver pair
+    storage: {} // name - driver pair
   }
 
   const debug = Debug('od:ODApp')
@@ -35,7 +35,7 @@ export default function ODApp (config = {}) {
     di: {
       writable: false,
       configurable: true,
-      value: di,
+      value: di
     },
     defineHandler: {
       writable: false,
@@ -44,7 +44,7 @@ export default function ODApp (config = {}) {
         const definer = defineHandler(name)
         cb(definer)
         handlerDefinitions.push(definer.build())
-      },
+      }
     },
     defineStorage: {
       writable: false,
@@ -53,7 +53,7 @@ export default function ODApp (config = {}) {
         const definer = defineStorage(name)
         cb && cb(definer)
         storageDefinitions.push(definer.build())
-      },
+      }
     },
     run: {
       writable: false,
@@ -114,8 +114,8 @@ export default function ODApp (config = {}) {
             res.status(err.status).json({
               error: {
                 message: err.message,
-                code: err.code,
-              },
+                code: err.code
+              }
             })
           } else {
             console.error(err.stack)
@@ -130,15 +130,14 @@ export default function ODApp (config = {}) {
           return Promise.resolve()
         }
         return new Promise(resolve => app.listen(options.PORT || 8082, resolve))
-      },
+      }
     },
     stop: {
       writable: false,
       configurable: false,
       value: async function () {
         await di.mysql.end()
-      },
-    },
+      }
+    }
   })
 }
-

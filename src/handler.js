@@ -11,7 +11,7 @@ export function handlerDefiner (options) {
       name,
       handler: null,
       options: {},
-      endpoint: {},
+      endpoint: {}
     }
 
     return Object.create(null, {
@@ -50,8 +50,8 @@ export function handlerDefiner (options) {
       build: {
         configurable: false,
         writable: false,
-        value: () => d,
-      },
+        value: () => d
+      }
     })
   }
 }
@@ -59,12 +59,11 @@ export function handlerDefiner (options) {
 const noop = v => v
 
 export function handlerMaker (options = {}) {
-
   let {
     name,
     tableName,
     preprocessor = {},
-    sanitizer = {},
+    sanitizer = {}
   } = options
 
   ensure.nonEmptyString(name, 'handlerMaker requires name option.')
@@ -106,7 +105,7 @@ export function handlerMaker (options = {}) {
     const sql = knex(tableName).insert(data).toString()
     try {
       const { insertId } = await conn.query(sql)
-      return await getHandlerByHandlerMaker(context, insertId)
+      return getHandlerByHandlerMaker(context, insertId)
     } catch (ex) {
       if (isForeignKeyError(ex)) {
         context.ensure(false, `Foreign key error occurred while inserting ${name}`)
@@ -117,7 +116,7 @@ export function handlerMaker (options = {}) {
 
   async function modifyHandlerByHandlerMaker (context, id, data) {
     await Promise.resolve(preprocessor.common(context))
-    await Promise.resolve(addPreprocessor(context))
+    await Promise.resolve(modifyPreprocessor(context))
 
     id = sanitizer.id(id || context.getParam('id'))
     data = data ? sanitizer.modify(data) : context.getParamObject(sanitizer.modify)
@@ -126,7 +125,7 @@ export function handlerMaker (options = {}) {
     const q = knex(tableName).update(data).where('id', id).toString()
     const { affectedRows } = await conn.query(q)
     context.ensure(affectedRows === 1, `Cannot find data of id [${id}]`)
-    return await getHandlerByHandlerMaker(context, id)
+    return getHandlerByHandlerMaker(context, id)
   }
 
   return {
@@ -152,6 +151,6 @@ export function handlerMaker (options = {}) {
         d.handler(modifyHandlerByHandlerMaker)
           .endpoint('post', `${prefix}:id`)
       )
-    },
+    }
   }
 }

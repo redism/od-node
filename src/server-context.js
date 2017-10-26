@@ -3,7 +3,7 @@
  * Context to use from server handlers
  *
  **/
-import { ensure, sanitizer, isObjectSanitizer, getSanitizerOptions } from 'overdosed-js'
+import { ensure, isObjectSanitizer, getSanitizerOptions } from 'od-js'
 import _ from 'lodash'
 import Debug from 'debug'
 
@@ -19,7 +19,7 @@ function contexter (di, definition, options) {
     getMySQLConnection: {
       configurable: false,
       writable: false,
-      value: () => di.mysql,
+      value: () => di.mysql
     },
     debug: {
       configurable: true, writable: false, value: Debug(`od:${definition.name}`)
@@ -94,7 +94,7 @@ function contexter (di, definition, options) {
       value: function (name, value) {
         this.express.res.cookie(name, value, { signed: true })
       }
-    },
+    }
   })
 
   return function createContext (req, res) {
@@ -104,14 +104,14 @@ function contexter (di, definition, options) {
         configurable: false,
         writable: false,
         value: { req, res }
-      },
+      }
     })
   }
 }
 
 export function ContextWrapper (options = {}) {
   options = Object.assign({
-    type: 'express',
+    type: 'express'
   }, options)
 
   switch (options.type) {
@@ -136,7 +136,7 @@ export function ContextWrapper (options = {}) {
                   // run deferred here.
                 })
             }
-          },
+          }
         }
       })
     default:

@@ -1,17 +1,24 @@
 {
-  "name": "overdosed-node-lib",
-  "version": "1.0.0",
+  "name": "od-node",
+  "version": "0.1.0",
   "description": "",
   "main": "lib/index.js",
+  "jsnext:main": "src/index.js",
   "scripts": {
     "test": "jest",
     "test:watch": "jest --watchAll",
     "build": "babel src -d lib",
-    "build:watch": "babel src -d lib -w"
+    "build:watch": "babel src -d lib -w",
+    "lint": "npm run lint:js",
+    "lint:eslint": "eslint --ignore-path .gitignore --ignore-pattern lib",
+    "lint:fix": "eslint --ignore-path .gitignore --ignore-pattern lib --fix -- . ",
+    "lint:js": "npm run lint:eslint -- . ",
+    "publish": "npm run lint && npm run test && npm run build"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "babel-runtime": "6.26.0",
     "bcrypt": "1.0.3",
     "bluebird": "^3.5.0",
     "body-parser": "1.18.2",
@@ -24,7 +31,8 @@
     "mkdirp": "0.5.1",
     "moment": "2.18.1",
     "morgan": "1.9.0",
-    "mysql": "2.14.1"
+    "mysql": "2.14.1",
+    "od-js": "0.1.2"
   },
   "devDependencies": {
     "babel-cli": "6.26.0",
@@ -32,6 +40,13 @@
     "babel-preset-bluebird": "^1.0.1",
     "babel-preset-env": "1.6.1",
     "babel-preset-node6": "^11.0.0",
+    "eslint": "4.9.0",
+    "eslint-config-standard": "10.2.1",
+    "eslint-plugin-import": "2.8.0",
+    "eslint-plugin-jest": "21.2.0",
+    "eslint-plugin-node": "5.2.1",
+    "eslint-plugin-promise": "3.6.0",
+    "eslint-plugin-standard": "3.0.1",
     "jest": "21.2.1"
   }
 }

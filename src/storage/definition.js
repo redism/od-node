@@ -18,8 +18,8 @@ export function storageDefiner (options = {}) {
             }
           })(options, { name })
           return { name, driver }
-        },
-      },
+        }
+      }
     })
   }
 }
