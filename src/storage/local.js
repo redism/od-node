@@ -3,7 +3,7 @@ import mkdirp from 'mkdirp'
 import path from 'path'
 import Debug from 'debug'
 import uuid from 'uuid/v4'
-import { ensure } from 'overdosed-js'
+import { ensure } from 'od-js'
 import { moveFile } from '../utils'
 
 const driverPrototype = {

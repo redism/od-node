@@ -1,6 +1,6 @@
 import _ from 'lodash'
 import Knex from 'knex'
-import { ensure, isSanitizer } from 'overdosed-js'
+import { ensure, isSanitizer } from 'od-js'
 import { isForeignKeyError } from './mysql'
 
 const knex = Knex({ client: 'mysql' })
