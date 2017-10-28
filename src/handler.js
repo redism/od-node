@@ -1,9 +1,10 @@
 import _ from 'lodash'
 import Knex from 'knex'
-import { ensure, isSanitizer } from 'od-js'
+import { ensure, sanitizer as Sanitizer } from 'od-js'
 import { isForeignKeyError } from './mysql'
 
 const knex = Knex({ client: 'mysql' })
+const sane = Sanitizer()
 
 export function handlerDefiner (options) {
   return function defineHandler (name) {
@@ -69,10 +70,11 @@ export function handlerMaker (options = {}) {
   ensure.nonEmptyString(name, 'handlerMaker requires name option.')
   ensure.nonEmptyString(tableName, 'handlerMaker requires tableName option.')
 
-  ensure(isSanitizer(sanitizer.id), 'handlerMaker requires sanitizer.id option.')
-  ensure(isSanitizer(sanitizer.add), 'handlerMaker requires sanitizer.add option.')
-  ensure(isSanitizer(sanitizer.get), 'handlerMaker requires sanitizer.get option.')
-  ensure(isSanitizer(sanitizer.modify), 'handlerMaker requires sanitizer.modify option.')
+  // ensure(isSanitizer(sanitizer.id), 'handlerMaker requires sanitizer.id option.')
+  // ensure(isSanitizer(sanitizer.ids), 'handlerMaker requires sanitizer.ids option.')
+  // ensure(isSanitizer(sanitizer.add), 'handlerMaker requires sanitizer.add option.')
+  // ensure(isSanitizer(sanitizer.get), 'handlerMaker requires sanitizer.get option.')
+  // ensure(isSanitizer(sanitizer.modify), 'handlerMaker requires sanitizer.modify option.')
 
   if (_.isFunction(preprocessor)) {
     preprocessor = { common: preprocessor }
@@ -81,6 +83,7 @@ export function handlerMaker (options = {}) {
   const addPreprocessor = preprocessor.add || noop
   const getPreprocessor = preprocessor.get || noop
   const modifyPreprocessor = preprocessor.modify || noop
+  const removePreprocessor = preprocessor.remove || noop
 
   async function getHandlerByHandlerMaker (context, id) {
     await Promise.resolve(preprocessor.common(context))
@@ -128,10 +131,32 @@ export function handlerMaker (options = {}) {
     return getHandlerByHandlerMaker(context, id)
   }
 
+  const idSanitizer = sane.anyOf(
+    sane.array(sanitizer.id),
+    sanitizer.id,
+  )
+  const removeHandlerByHandlerMaker = async function removeHandlerByHandlerMaker (context, id) {
+    await Promise.resolve(preprocessor.common(context))
+    await Promise.resolve(removePreprocessor(context))
+
+    id = idSanitizer(id || context.getParam('id'))
+    const conn = context.getMySQLConnection()
+    let q
+    if (_.isArray(id)) {
+      q = knex(tableName).whereIn('id', id).del().toString()
+    } else {
+      q = knex(tableName).where('id', id).del().toString()
+    }
+    const { affectedRows } = await conn.query(q)
+
+    return { num: affectedRows }
+  }
+
   return {
     add: addHandlerByHandlerMaker,
     get: getHandlerByHandlerMaker,
     modify: modifyHandlerByHandlerMaker,
+    remove: removeHandlerByHandlerMaker,
     route: (app, prefix) => {
       if (!prefix.endsWith('/')) {
         prefix += '/'
@@ -150,6 +175,16 @@ export function handlerMaker (options = {}) {
       app.defineHandler(`modify${name}`, d =>
         d.handler(modifyHandlerByHandlerMaker)
           .endpoint('post', `${prefix}:id`)
+      )
+
+      app.defineHandler(`remove${name}`, d =>
+        d.handler(removeHandlerByHandlerMaker)
+          .endpoint('del', `${prefix}:id`)
+      )
+
+      app.defineHandler(`removeMulti${name}`, d =>
+        d.handler(removeHandlerByHandlerMaker)
+          .endpoint('del', `${prefix}`)
       )
     }
   }
