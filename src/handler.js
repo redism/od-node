@@ -179,12 +179,12 @@ export function handlerMaker (options = {}) {
 
       app.defineHandler(`remove${name}`, d =>
         d.handler(removeHandlerByHandlerMaker)
-          .endpoint('del', `${prefix}:id`)
+          .endpoint('delete', `${prefix}:id`)
       )
 
       app.defineHandler(`removeMulti${name}`, d =>
         d.handler(removeHandlerByHandlerMaker)
-          .endpoint('del', `${prefix}`)
+          .endpoint('delete', `${prefix}`)
       )
     }
   }

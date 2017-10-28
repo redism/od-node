@@ -3,9 +3,9 @@ import bcrypt from 'bcrypt'
 import Knex from 'knex'
 import moment from 'moment'
 import jwt from 'jsonwebtoken'
-import { sanitizer as Sanitizer, ensure } from 'od-js'
+import { ensure } from 'od-js'
 import ODApp from './express'
-import { upsertSQL, isDeadLockError, isForeignKeyError } from './mysql'
+import { isDeadLockError, isForeignKeyError, upsertSQL } from './mysql'
 import { handlerMaker } from './handler'
 
 const knex = Knex({ client: 'mysql' }) // use only for query-builder
@@ -143,19 +143,34 @@ const jwtUtil = {
   decode: decodeJWTToken
 }
 
-module.exports = exports = {
-  genSaltedPassword: genSaltedPassword,
-  checkSaltedPassword: checkSaltedPassword,
-  knex: knex,
-  Knex: Knex,
+const exports = {
+  genSaltedPassword,
+  checkSaltedPassword,
+  knex,
+  Knex,
   jwtUtil,
-  moment: moment,
-  upsertSQL: upsertSQL,
-  mysql: mysql,
-  sanitizer: Sanitizer,
-  ensure: ensure,
-  ODApp: ODApp,
+  moment,
+  upsertSQL,
+  mysql,
+  ensure,
+  ODApp,
   isDeadLockError,
   isForeignKeyError,
-  handlerMaker
+  handlerMaker,
+}
+export default exports
+export {
+  genSaltedPassword,
+  checkSaltedPassword,
+  knex,
+  Knex,
+  jwtUtil,
+  moment,
+  upsertSQL,
+  mysql,
+  ensure,
+  ODApp,
+  isDeadLockError,
+  isForeignKeyError,
+  handlerMaker,
 }
