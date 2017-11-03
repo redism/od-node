@@ -92,7 +92,6 @@ function contexter (di, definition, options) {
 
         res.setHeader('Content-Disposition', 'attachment; filename=' + fileName)
         res.setHeader('Content-Type', contentType)
-        console.log(95, contentType)
         return res.status(200).send(contents)
       },
     },

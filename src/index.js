@@ -7,6 +7,7 @@ import { ensure } from 'od-js'
 import ODApp from './express'
 import { isDeadLockError, isForeignKeyError, upsertSQL } from './mysql'
 import { handlerMaker } from './handler'
+import { gmailSender } from './sendmail'
 
 const knex = Knex({ client: 'mysql' }) // use only for query-builder
 
@@ -157,6 +158,7 @@ const exports = {
   isDeadLockError,
   isForeignKeyError,
   handlerMaker,
+  gmailSender,
 }
 export default exports
 export {
@@ -173,4 +175,5 @@ export {
   isDeadLockError,
   isForeignKeyError,
   handlerMaker,
+  gmailSender,
 }
