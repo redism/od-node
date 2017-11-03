@@ -3,7 +3,8 @@
  * Context to use from server handlers
  *
  **/
-import { ensure, isObjectSanitizer, getSanitizerOptions } from 'od-js'
+import { ensure, getSanitizerOptions, isObjectSanitizer } from 'od-js'
+import btoa from 'btoa'
 import _ from 'lodash'
 import Debug from 'debug'
 
@@ -81,6 +82,20 @@ function contexter (di, definition, options) {
         }
       }
     },
+    sendFileFromMemory: {
+      configurable: false,
+      writable: false,
+      value: async function sendFileFromMemory (fileName, contentType, data) {
+        const res = this.express.res
+        const base64Encoded = btoa(data)
+        const contents = new Buffer(base64Encoded, 'base64')
+
+        res.setHeader('Content-Disposition', 'attachment; filename=' + fileName)
+        res.setHeader('Content-Type', contentType)
+        console.log(95, contentType)
+        return res.status(200).send(contents)
+      },
+    },
     getSignedCookie: {
       configurable: false,
       writable: false,
@@ -126,10 +141,12 @@ export function ContextWrapper (options = {}) {
               const context = createContextPerDefinition(req, res)
               Promise.resolve(definition.handler(context))
                 .then(response => {
-                  res.json({ data: response })
+                  if (!res.headersSent) {
+                    res.json({ data: response })
+                  }
                 }, ex => {
                   // check handled error here
-                  // console.log(`Handler error`, ex) // TODO: 왜 default error handler 를 타지 않는가?
+                  console.log(`Handler error`, ex) // TODO: 왜 default error handler 를 타지 않는가?
                   next(ex)
                 })
                 .finally(() => {
