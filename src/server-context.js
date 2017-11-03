@@ -17,6 +17,8 @@ function contexter (di, definition, options) {
 
   const contextPerDefinition = Object.create(null, {
     di: { configurable: false, writable: false, value: di },
+    _deferred: { configurable: false, writable: true, value: [] },
+    defer: { configurable: false, writable: false, value: function (task) { this._deferred.push(task) } },
     getMySQLConnection: {
       configurable: false,
       writable: false,
@@ -148,8 +150,15 @@ export function ContextWrapper (options = {}) {
                   console.log(`Handler error`, ex) // TODO: 왜 default error handler 를 타지 않는가?
                   next(ex)
                 })
-                .finally(() => {
-                  // run deferred here.
+                .finally(async () => {
+                  // run deferred tasks.
+                  for (let i = 0; i < context._deferred.length; i++) {
+                    try {
+                      await Promise.resolve(context._deferred[ i ]())
+                    } catch (ex) {
+                      console.error(ex)
+                    }
+                  }
                 })
             }
           }

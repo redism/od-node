@@ -1,11 +1,12 @@
 import mysql from 'mysql'
+import mkdirP from 'mkdirp'
 import bcrypt from 'bcrypt'
 import Knex from 'knex'
 import moment from 'moment'
 import jwt from 'jsonwebtoken'
 import { ensure } from 'od-js'
 import ODApp from './express'
-import { isDeadLockError, isForeignKeyError, upsertSQL } from './mysql'
+import { getDupKeyErrorIndexName, isDeadLockError, isDupKeyError, isForeignKeyError, upsertSQL } from './mysql'
 import { handlerMaker } from './handler'
 import { gmailSender } from './sendmail'
 
@@ -139,6 +140,12 @@ async function decodeJWTToken (secret, token) {
   })
 }
 
+async function mkdirp (path) {
+  return new Promise((resolve, reject) => {
+    mkdirP(path, (err) => err ? reject(err) : resolve())
+  })
+}
+
 const jwtUtil = {
   encode: encodeJWTToken,
   decode: decodeJWTToken
@@ -157,8 +164,11 @@ const exports = {
   ODApp,
   isDeadLockError,
   isForeignKeyError,
+  isDupKeyError,
+  getDupKeyErrorIndexName,
   handlerMaker,
   gmailSender,
+  mkdirp,
 }
 export default exports
 export {
@@ -174,6 +184,9 @@ export {
   ODApp,
   isDeadLockError,
   isForeignKeyError,
+  isDupKeyError,
+  getDupKeyErrorIndexName,
   handlerMaker,
   gmailSender,
+  mkdirp,
 }

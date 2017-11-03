@@ -2,6 +2,7 @@ import _ from 'lodash'
 import mysql from 'mysql'
 import Knex from 'knex'
 import Debug from 'debug'
+import { ensure } from 'od-js'
 
 const knex = Knex({ client: 'mysql' }) // use only for query-builder
 const debug = Debug('od.mysql')
@@ -12,6 +13,12 @@ const UnknownDBErrorObject = msg => { return { code: 5811, status: 500, msg } }
 
 export const isDeadLockError = err => err && err.errno && err.errno === 1213
 export const isForeignKeyError = err => err && err.errno && err.errno === 1452
+export const isDupKeyError = err => err && err.errno && err.errno === 1062
+export const getDupKeyErrorIndexName = err => {
+  // ex: Duplicate entry '1023' for key 'partner_sub1_unique_index'
+  const key = err.sqlMessage.split('for key ')[1]
+  return key.substring(1, key.length - 1)
+}
 
 export async function connectMySQLPool (connectionOption) {
   const pool = mysql.createPool(connectionOption)
@@ -59,21 +66,23 @@ export async function connectMySQLPool (connectionOption) {
             }
 
             // 컨텍스트 종료시에 커밋이 되어있지 않다면 자동으로 롤백시키고 connection 을 반환한다.
-            context.defer(async () => {
-              return new Promise(resolve => {
-                if (!isTransactionFinished) {
-                  isTransactionFinished = true
-                  debug(`Transaction is not finished after context finished. rolling back : ${context.location}`)
-                  connection.rollback(() => {
+            if (context) {
+              context.defer(async () => {
+                return new Promise(resolve => {
+                  if (!isTransactionFinished) {
+                    isTransactionFinished = true
+                    debug(`Transaction is not finished after context finished. rolling back.`)
+                    connection.rollback(() => {
+                      release()
+                      resolve()
+                    })
+                  } else {
                     release()
                     resolve()
-                  })
-                } else {
-                  release()
-                  resolve()
-                }
+                  }
+                })
               })
-            })
+            }
 
             /**
              * @name {Transaction}
@@ -90,7 +99,7 @@ export async function connectMySQLPool (connectionOption) {
                 })
               },
               commit: async () => {
-                context.ensure(!isTransactionFinished, DBErrorObject('Transaction already finished, but tried to commit.'))
+                ensure(!isTransactionFinished, DBErrorObject('Transaction already finished, but tried to commit.'))
                 isTransactionFinished = true
                 return new Promise((resolve, reject) => {
                   connection.commit(err => {
@@ -107,7 +116,7 @@ export async function connectMySQLPool (connectionOption) {
                 })
               },
               rollback: async () => {
-                context.ensure(!isTransactionFinished, DBErrorObject('Transaction already finished, but tried to rollback.'))
+                ensure(!isTransactionFinished, DBErrorObject('Transaction already finished, but tried to rollback.'))
                 isTransactionFinished = true
                 return new Promise(resolve => {
                   release()
@@ -154,13 +163,13 @@ export async function connectMySQLPool (connectionOption) {
             options.retry--
             return this.executeTransQueryWithRetry(context, fn, options)
           }
-          context.ensure(!!options.ignoreError, DeadlockErrorObject('Deadlock found'))
+          ensure(!!options.ignoreError, DeadlockErrorObject('Deadlock found'))
         }
         if (options.errorHandler && !options.ignoreError) {
           const ret = options.errorHandler(ex)
           if (ret) return Promise.resolve(ret)
         }
-        context.ensure(!!options.ignoreError, UnknownDBErrorObject('Unknown error in executeTransQuery /w retry.'))
+        ensure(!!options.ignoreError, UnknownDBErrorObject('Unknown error in executeTransQuery /w retry.'))
       }
     }
   }
@@ -186,7 +195,7 @@ export async function initMySQLPool (options = {}) {
  * @param tableName {string}
  * @param dataInsert {object|array}
  * @param [fieldsToUpdate] {array}
- * @return {Any}
+ * @return {*}
  */
 export function upsertSQL (tableName, dataInsert, fieldsToUpdate) {
   if (fieldsToUpdate === undefined) {
