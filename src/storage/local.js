@@ -38,7 +38,7 @@ const driverPrototype = {
     await moveFile(imagePath, finalImagePath)
 
     return imageId
-  }
+  },
 }
 
 export default function createLocalStorageDriver (options, definition) {
@@ -51,27 +51,27 @@ export default function createLocalStorageDriver (options, definition) {
     _ensure: {
       configurable: false,
       writable: false,
-      value: ensure
+      value: ensure,
     },
     _paramError: {
       configurable: false,
       writable: false,
-      value: name => { return { error: ({ value }) => `Invalid [${name}] - ${value} / ${typeof value}` } }
+      value: name => { return { error: ({ value }) => `Invalid [${name}] - ${value} / ${typeof value}` } },
     },
     _debug: {
       configurable: false,
       writable: false,
-      value: Debug(`od:localStorage:${name}`)
+      value: Debug(`od:localStorage:${name}`),
     },
     _name: {
       configurable: false,
       writable: false,
-      value: name
+      value: name,
     },
     _basePath: {
       configurable: false,
       writable: false,
-      value: path
-    }
+      value: path,
+    },
   })
 }

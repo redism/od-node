@@ -12,7 +12,7 @@ export function handlerDefiner (options) {
       name,
       handler: null,
       options: {},
-      endpoint: {}
+      endpoint: {},
     }
 
     return Object.create(null, {
@@ -22,7 +22,7 @@ export function handlerDefiner (options) {
         value: function (v) {
           d.name = v
           return this
-        }
+        },
       },
       handler: {
         configurable: false,
@@ -30,7 +30,7 @@ export function handlerDefiner (options) {
         value: function (v) {
           d.handler = v
           return this
-        }
+        },
       },
       multer: {
         configurable: false,
@@ -38,7 +38,7 @@ export function handlerDefiner (options) {
         value: function (v) {
           d.options.multer = v
           return this
-        }
+        },
       },
       endpoint: {
         configurable: false,
@@ -46,13 +46,13 @@ export function handlerDefiner (options) {
         value: function (method, url) {
           d.endpoint = { method, url }
           return this
-        }
+        },
       },
       build: {
         configurable: false,
         writable: false,
-        value: () => d
-      }
+        value: () => d,
+      },
     })
   }
 }
@@ -64,7 +64,7 @@ export function handlerMaker (options = {}) {
     name,
     tableName,
     preprocessor = {},
-    sanitizer = {}
+    sanitizer = {},
   } = options
 
   ensure.nonEmptyString(name, 'handlerMaker requires name option.')
@@ -186,6 +186,6 @@ export function handlerMaker (options = {}) {
         d.handler(removeHandlerByHandlerMaker)
           .endpoint('delete', `${prefix}`)
       )
-    }
+    },
   }
 }

@@ -40,7 +40,7 @@ function getMySQLConnectionLambda (options) {
         password: process.env.mysql_password,
         port: parseInt(process.env.mysql_port, 10),
         database: process.env.mysql_database,
-        debug: parseInt(process.env.mysql_debug, 10) === 1
+        debug: parseInt(process.env.mysql_debug, 10) === 1,
       }
     }
   }
@@ -148,7 +148,7 @@ async function mkdirp (path) {
 
 const jwtUtil = {
   encode: encodeJWTToken,
-  decode: decodeJWTToken
+  decode: decodeJWTToken,
 }
 
 const exports = {

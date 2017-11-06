@@ -22,10 +22,10 @@ function contexter (di, definition, options) {
     getMySQLConnection: {
       configurable: false,
       writable: false,
-      value: () => di.mysql
+      value: () => di.mysql,
     },
     debug: {
-      configurable: true, writable: false, value: Debug(`od:${definition.name}`)
+      configurable: true, writable: false, value: Debug(`od:${definition.name}`),
     },
     ensure: { configurable: false, writable: false, value: ensure },
     getParam: {
@@ -40,7 +40,7 @@ function contexter (di, definition, options) {
               () => this.express.req.query[ keys ])
           )
         }
-      }
+      },
     },
     getParamObject: {
       configurable: false,
@@ -60,7 +60,7 @@ function contexter (di, definition, options) {
           }
         })
         return wrapper(ret)
-      }
+      },
     },
     getFiles: {
       configurable: false,
@@ -82,7 +82,7 @@ function contexter (di, definition, options) {
         } else {
           return this.express.req.files[ keys ]
         }
-      }
+      },
     },
     sendFileFromMemory: {
       configurable: false,
@@ -90,7 +90,7 @@ function contexter (di, definition, options) {
       value: async function sendFileFromMemory (fileName, contentType, data) {
         const res = this.express.res
         const base64Encoded = btoa(data)
-        const contents = new Buffer(base64Encoded, 'base64')
+        const contents = Buffer.from(base64Encoded, 'base64')
 
         res.setHeader('Content-Disposition', 'attachment; filename=' + fileName)
         res.setHeader('Content-Type', contentType)
@@ -102,15 +102,15 @@ function contexter (di, definition, options) {
       writable: false,
       value: function (name) {
         return this.express.req.signedCookies[ name ]
-      }
+      },
     },
     setSignedCookie: {
       configurable: false,
       writable: false,
       value: function (name, value) {
         this.express.res.cookie(name, value, { signed: true })
-      }
-    }
+      },
+    },
   })
 
   return function createContext (req, res) {
@@ -119,15 +119,15 @@ function contexter (di, definition, options) {
       express: {
         configurable: false,
         writable: false,
-        value: { req, res }
-      }
+        value: { req, res },
+      },
     })
   }
 }
 
 export function ContextWrapper (options = {}) {
   options = Object.assign({
-    type: 'express'
+    type: 'express',
   }, options)
 
   switch (options.type) {
@@ -161,8 +161,8 @@ export function ContextWrapper (options = {}) {
                   }
                 })
             }
-          }
-        }
+          },
+        },
       })
     default:
       throw new Error(`Unknown context options.type = ${options.type}`)

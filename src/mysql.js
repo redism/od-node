@@ -16,7 +16,7 @@ export const isForeignKeyError = err => err && err.errno && err.errno === 1452
 export const isDupKeyError = err => err && err.errno && err.errno === 1062
 export const getDupKeyErrorIndexName = err => {
   // ex: Duplicate entry '1023' for key 'partner_sub1_unique_index'
-  const key = err.sqlMessage.split('for key ')[1]
+  const key = err.sqlMessage.split('for key ')[ 1 ]
   return key.substring(1, key.length - 1)
 }
 
@@ -122,7 +122,7 @@ export async function connectMySQLPool (connectionOption) {
                   release()
                   connection.rollback(resolve)
                 })
-              }
+              },
             }
             resolve(transactionObject)
           })
@@ -144,7 +144,7 @@ export async function connectMySQLPool (connectionOption) {
         retry: 5,
         ignoreError: false,
         errorHandler: null,
-        deadlockInterval: 100
+        deadlockInterval: 100,
       }, options || {})
 
       const trans = await this.beginTransaction(context)
@@ -171,7 +171,7 @@ export async function connectMySQLPool (connectionOption) {
         }
         ensure(!!options.ignoreError, UnknownDBErrorObject('Unknown error in executeTransQuery /w retry.'))
       }
-    }
+    },
   }
 }
 
@@ -181,7 +181,7 @@ const mysqlDefaultOptions = {
   password: process.env.mysql_password || '',
   port: parseInt(process.env.mysql_port, 10) || 3306,
   database: process.env.mysql_database || 'test',
-  debug: parseInt(process.env.mysql_debug, 10) === 1
+  debug: parseInt(process.env.mysql_debug, 10) === 1,
 }
 
 export async function initMySQLPool (options = {}) {
