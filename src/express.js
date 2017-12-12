@@ -13,6 +13,7 @@ export default function ODApp (config = {}) {
   const app = express()
   const handlerDefinitions = []
   const storageDefinitions = []
+  const initializations = []
   const di = {
     options: Object.assign({
       PORT: 8082,
@@ -32,6 +33,13 @@ export default function ODApp (config = {}) {
   const defineStorage = storageDefiner(di.options.STORAGE)
 
   return Object.create(null, {
+    addInit: {
+      writable: false,
+      configurable: true,
+      value: function (initCode) {
+        initializations.push(() => Promise.resolve(initCode()))
+      },
+    },
     di: {
       writable: false,
       configurable: true,
@@ -122,6 +130,13 @@ export default function ODApp (config = {}) {
             res.status(500).json({ error: err.message })
           }
         })
+
+        //
+        // Initialization routines
+        //
+        for (let i = 0; i < initializations.length; i++) {
+          await initializations[ i ]()
+        }
 
         //
         // Start Listening
