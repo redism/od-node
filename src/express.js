@@ -117,6 +117,7 @@ export default function ODApp (config = {}) {
         // Mount final error logger
         //
         app.use(function (err, req, res, next) {
+          di.onError && di.onError(err)
           if (err.handled) {
             // console.log(`Handler returned error : `, err)
             res.status(err.status).json({

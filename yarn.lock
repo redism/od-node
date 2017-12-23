@@ -2920,9 +2920,9 @@ object.omit@^2.0.0:
     for-own "^0.1.4"
     is-extendable "^0.1.1"
 
-od-js@0.1.2:
-  version "0.1.2"
-  resolved "https://registry.yarnpkg.com/od-js/-/od-js-0.1.2.tgz#c1359ade13b416d07936b5d4cd7224e4c6f9533a"
+od-js@0.1.7:
+  version "0.1.7"
+  resolved "https://registry.yarnpkg.com/od-js/-/od-js-0.1.7.tgz#e489e9116699b4527f932f7acebf5debfc32827e"
   dependencies:
     babel-runtime "6.26.0"
     bluebird "^3.5.0"
