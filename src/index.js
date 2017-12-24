@@ -9,6 +9,7 @@ import ODApp from './express'
 import { getDupKeyErrorIndexName, isDeadLockError, isDupKeyError, isForeignKeyError, upsertSQL } from './mysql'
 import { handlerMaker } from './handler'
 import { gmailSender } from './sendmail'
+import {SlackNotifier} from './slack'
 
 const knex = Knex({ client: 'mysql' }) // use only for query-builder
 
@@ -169,6 +170,7 @@ const exports = {
   handlerMaker,
   gmailSender,
   mkdirp,
+  SlackNotifier,
 }
 export default exports
 export {
@@ -189,4 +191,5 @@ export {
   handlerMaker,
   gmailSender,
   mkdirp,
+  SlackNotifier,
 }
