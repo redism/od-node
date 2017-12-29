@@ -112,3 +112,4 @@ fabric.properties
 *.bak
 lib
 test/images/localImages/*
+aws-cred.json

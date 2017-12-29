@@ -13,6 +13,8 @@ export function storageDefiner (options = {}) {
             switch (type) {
               case 'local':
                 return require('./local').default(options, definition)
+              case 's3':
+                return require('./s3').default(options, definition)
               default:
                 throw new Error(`Unknown storage type : ${type}`)
             }

@@ -28,7 +28,30 @@ describe('storage', () => {
       expect(r.length).toBeGreaterThan(0)
     })
   })
-  // it('upload image using s3', async () => {
-  //   console.log(1)
-  // })
+
+  describe('s3', () => {
+    let driver = null
+    beforeAll(async () => {
+      const storageOption = {
+        type: 's3',
+        options: {
+          credential: path.join(__dirname, './res/aws-cred.json'),
+          bucket: 'gcb-testcase',
+          removeOriginal: false,
+        },
+      }
+      const defineStorage = storageDefiner(storageOption)
+      const r = defineStorage('s3Images').build()
+      driver = r.driver
+      await driver.init()
+      await driver.emptyBucket()
+    })
+
+    it('upload image using s3', async () => {
+      const r = await driver.save(imagePath)
+
+      expect(typeof r).toEqual('string')
+      expect(r.length).toBeGreaterThan(0)
+    })
+  })
 })
