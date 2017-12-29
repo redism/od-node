@@ -1,4 +1,5 @@
 import fs from 'fs'
+import rimraf from 'rimraf'
 
 /**
  * 파일 복사를 수행합니다.
@@ -16,7 +17,7 @@ export function copyFile (oldPath, newPath) {
     writeStream.on('error', reject)
 
     readStream.on('close', function () {
-      fs.unlink(oldPath, resolve)
+      resolve()
     })
 
     readStream.pipe(writeStream)
@@ -41,6 +42,18 @@ export function moveFile (oldPath, newPath) {
         }
       }
       resolve()
+    })
+  })
+}
+
+export async function rmrf (path) {
+  return new Promise((resolve, reject) => {
+    rimraf(path, err => {
+      if (err) {
+        reject(err)
+      } else {
+        resolve()
+      }
     })
   })
 }

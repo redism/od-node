@@ -4,7 +4,7 @@ import path from 'path'
 import Debug from 'debug'
 import uuid from 'uuid/v4'
 import { ensure } from 'od-js'
-import { moveFile } from '../utils'
+import { copyFile, moveFile } from '../utils'
 
 const driverPrototype = {
   init: async function () {
@@ -35,7 +35,11 @@ const driverPrototype = {
 
     const imageId = uuid()
     const finalImagePath = path.join(this._basePath, this._name, `${imageId}.jpg`)
-    await moveFile(imagePath, finalImagePath)
+    if (this._removeOriginal) {
+      await moveFile(imagePath, finalImagePath)
+    } else {
+      await copyFile(imagePath, finalImagePath)
+    }
 
     return imageId
   },
@@ -43,7 +47,7 @@ const driverPrototype = {
 
 export default function createLocalStorageDriver (options, definition) {
   // TODO: sanitize options
-  const { path } = options
+  const { path, removeOriginal = true } = options
   const { name } = definition
 
   return Object.create(driverPrototype, {
@@ -72,6 +76,11 @@ export default function createLocalStorageDriver (options, definition) {
       configurable: false,
       writable: false,
       value: path,
+    },
+    _removeOriginal: {
+      configurable: false,
+      writable: false,
+      value: removeOriginal,
     },
   })
 }
