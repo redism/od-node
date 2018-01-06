@@ -80,7 +80,7 @@ function contexter (di, definition, options) {
           const files = await Promise.map(keys, key => this.getFiles(key))
           return files.map(v => _.isArray(v) ? v[ 0 ] : v)
         } else {
-          return this.express.req.files[ keys ]
+          return this.express.req.files ? this.express.req.files[ keys ] : undefined
         }
       },
     },
