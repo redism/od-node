@@ -107,15 +107,15 @@ export default function ODApp (config = {}) {
         //
         const contextWrapper = ContextWrapper(options)
 
+        if (this.initServer) {
+          await this.initServer()
+        }
+
         handlerDefinitions.forEach(definition => {
           const { endpoint: { url, method }, name } = definition
           debug(`Mounting ${name} for [${method}] ${url}`)
           app[ method ](url, contextWrapper.wrap(di, definition))
         })
-
-        if (this.initServer) {
-          await this.initServer()
-        }
 
         //
         // Mount final error logger
