@@ -113,3 +113,4 @@ fabric.properties
 lib
 test/images/localImages/*
 aws-cred.json
+aws-cred-od-node-testcase-runner.json

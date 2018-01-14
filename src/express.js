@@ -113,6 +113,10 @@ export default function ODApp (config = {}) {
           app[ method ](url, contextWrapper.wrap(di, definition))
         })
 
+        if (this.initServer) {
+          await this.initServer()
+        }
+
         //
         // Mount final error logger
         //
