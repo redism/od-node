@@ -117,6 +117,10 @@ export default function ODApp (config = {}) {
           app[ method ](url, contextWrapper.wrap(di, definition))
         })
 
+        if (this.afterHandlerMounted) {
+          await this.afterHandlerMounted()
+        }
+
         //
         // Mount final error logger
         //
