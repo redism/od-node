@@ -8,6 +8,12 @@ import btoa from 'btoa'
 import _ from 'lodash'
 import Debug from 'debug'
 
+function b64EncodeUnicode (str) {
+  return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function (match, p1) {
+    return String.fromCharCode(parseInt(p1, 16))
+  }))
+}
+
 function contexter (di, definition, options) {
   if (options.type !== 'express') { // we only support express node.js server for now.
     throw new Error(`Unknown type ${options.type}`)
@@ -89,7 +95,7 @@ function contexter (di, definition, options) {
       writable: false,
       value: async function sendFileFromMemory (fileName, contentType, data) {
         const res = this.express.res
-        const base64Encoded = btoa(data)
+        const base64Encoded = b64EncodeUnicode(data)
         const contents = Buffer.from(base64Encoded, 'base64')
 
         res.setHeader('Content-Disposition', 'attachment; filename=' + fileName)

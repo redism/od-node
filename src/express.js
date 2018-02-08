@@ -72,7 +72,9 @@ export default function ODApp (config = {}) {
         //
         // Initialize MySQL
         //
-        di.mysql = await initMySQLPool(options.MYSQL)
+        if (options.MYSQL) {
+          di.mysql = await initMySQLPool(options.MYSQL)
+        }
 
         //
         // Setup express
