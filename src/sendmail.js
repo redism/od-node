@@ -26,14 +26,14 @@ export function gmailSender (account, password, from) {
     sendText: {
       configurable: true,
       writable: false,
-      value: (to, subject, text, html) => {
+      value: (to, subject, text, html, options = {}) => {
         return new Promise((resolve, reject) => {
           transporter.sendMail(Object.assign(defaultMailOptions, {
             to,
             subject,
             text,
             html,
-          }), (err, info) => err ? reject(err) : resolve(info))
+          }, options), (err, info) => err ? reject(err) : resolve(info))
         })
       },
     },
