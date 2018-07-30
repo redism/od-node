@@ -64,6 +64,7 @@ export function handlerMaker (options = {}) {
     name,
     tableName,
     preprocessor = {},
+    postprocessor = {},
     sanitizer = {},
   } = options
 
@@ -85,6 +86,11 @@ export function handlerMaker (options = {}) {
   const modifyPreprocessor = preprocessor.modify || noop
   const removePreprocessor = preprocessor.remove || noop
 
+  const addPostprocessor = postprocessor.add || noop
+  const getPostprocessor = postprocessor.get || noop
+  const modifyPostprocessor = postprocessor.modify || noop
+  const removePostprocessor = postprocessor.remove || noop
+
   async function getHandlerByHandlerMaker (context, id) {
     await Promise.resolve(preprocessor.common(context))
     await Promise.resolve(getPreprocessor(context))
@@ -93,6 +99,8 @@ export function handlerMaker (options = {}) {
     const conn = context.getMySQLConnection()
     const q = knex(tableName).select().where('id', id).toString()
     const [ row ] = await conn.query(q)
+
+    await Promise.resolve(getPostprocessor(context, { row }))
 
     context.ensure(row, '해당 데이터를 찾을 수 없습니다.')
     return sanitizer.get(row)
@@ -108,6 +116,8 @@ export function handlerMaker (options = {}) {
     const sql = knex(tableName).insert(data).toString()
     try {
       const { insertId } = await conn.query(sql)
+
+      await Promise.resolve(addPostprocessor(context, { data, id: insertId, op: 'add' }))
       return getHandlerByHandlerMaker(context, insertId)
     } catch (ex) {
       if (isForeignKeyError(ex)) {
@@ -128,7 +138,10 @@ export function handlerMaker (options = {}) {
     const q = knex(tableName).update(data).where('id', id).toString()
     const { affectedRows } = await conn.query(q)
     context.ensure(affectedRows === 1, `Cannot find data of id [${id}]`)
-    return getHandlerByHandlerMaker(context, id)
+
+    const dataReloaded = await getHandlerByHandlerMaker(context, id)
+    await Promise.resolve(modifyPostprocessor(context, { data: dataReloaded, id, op: 'modify' }))
+    return dataReloaded
   }
 
   const idSanitizer = sane.anyOf(
@@ -141,13 +154,24 @@ export function handlerMaker (options = {}) {
 
     id = idSanitizer(id || context.getParam('id'))
     const conn = context.getMySQLConnection()
+
+    // 마음에 안들지만, 애초에 handler 를 od-node 에 넣은 것이 잘못된 선택이라고 생각하고 있음.
+    // 그냥 진행한다. 2018-07-30 11:11
     let q
+    if (_.isArray(id)) {
+      q = knex(tableName).whereIn('id', id).select().toString()
+    } else {
+      q = knex(tableName).where('id', id).select().toString()
+    }
+    const data = await conn.query(q)
+
     if (_.isArray(id)) {
       q = knex(tableName).whereIn('id', id).del().toString()
     } else {
       q = knex(tableName).where('id', id).del().toString()
     }
     const { affectedRows } = await conn.query(q)
+    await Promise.resolve(removePostprocessor(context, { id, data, op: 'remove' }))
 
     return { num: affectedRows }
   }
