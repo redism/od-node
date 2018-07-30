@@ -1,6 +1,6 @@
 {
   "name": "od-node",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "description": "Overdosed node library.",
   "main": "lib/index.js",
   "jsnext:main": "src/index.js",
