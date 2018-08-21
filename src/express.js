@@ -3,6 +3,7 @@ import Debug from 'debug'
 import morgan from 'morgan'
 import cookieParser from 'cookie-parser'
 import bodyParser from 'body-parser'
+import http from 'http'
 
 import { initMySQLPool } from './mysql'
 import { ContextWrapper } from './server-context'
@@ -11,6 +12,7 @@ import { storageDefiner } from './storage/definition'
 
 export default function ODApp (config = {}) {
   const app = express()
+  const httpServer = http.createServer(app)
   const handlerDefinitions = []
   const storageDefinitions = []
   const initializations = []
@@ -25,6 +27,7 @@ export default function ODApp (config = {}) {
       STORAGE: {},
     }, config),
     express: app,
+    httpServer,
     storage: {}, // name - driver pair
   }
 
@@ -155,7 +158,7 @@ export default function ODApp (config = {}) {
         if (noListen) {
           return Promise.resolve()
         }
-        return new Promise(resolve => app.listen(options.PORT || 8082, resolve))
+        return new Promise(resolve => httpServer.listen(options.PORT || 8082, resolve))
       },
     },
     stop: {
