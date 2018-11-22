@@ -2963,9 +2963,9 @@ object.omit@^2.0.0:
     for-own "^0.1.4"
     is-extendable "^0.1.1"
 
-od-js@0.1.7:
-  version "0.1.7"
-  resolved "https://registry.yarnpkg.com/od-js/-/od-js-0.1.7.tgz#e489e9116699b4527f932f7acebf5debfc32827e"
+od-js@0.1.9:
+  version "0.1.9"
+  resolved "https://registry.yarnpkg.com/od-js/-/od-js-0.1.9.tgz#701d5c181f5e5a7a239e0c5163c7a744e079a62e"
   dependencies:
     babel-runtime "6.26.0"
     bluebird "^3.5.0"
@@ -3959,6 +3959,10 @@ utils-merge@1.0.1:
 uuid@3.1.0, uuid@^3.0.0, uuid@^3.1.0:
   version "3.1.0"
   resolved "https://registry.yarnpkg.com/uuid/-/uuid-3.1.0.tgz#3dd3d3e790abc24d7b0d3a034ffababe28ebbc04"
+
+uuid@3.3.2:
+  version "3.3.2"
+  resolved "https://registry.yarnpkg.com/uuid/-/uuid-3.3.2.tgz#1b4af4955eb3077c501c23872fc6513811587131"
 
 v8flags@^2.0.2, v8flags@^2.1.1:
   version "2.1.1"

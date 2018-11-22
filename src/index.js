@@ -9,7 +9,8 @@ import ODApp from './express'
 import { getDupKeyErrorIndexName, isDeadLockError, isDupKeyError, isForeignKeyError, upsertSQL } from './mysql'
 import { handlerMaker } from './handler'
 import { gmailSender } from './sendmail'
-import {SlackNotifier} from './slack'
+import { SlackNotifier } from './slack'
+import { storageDefiner } from './storage/definition'
 
 const knex = Knex({ client: 'mysql' }) // use only for query-builder
 
@@ -171,7 +172,9 @@ const exports = {
   gmailSender,
   mkdirp,
   SlackNotifier,
+  storageDefiner,
 }
+
 export default exports
 export {
   genSaltedPassword,
@@ -192,4 +195,5 @@ export {
   gmailSender,
   mkdirp,
   SlackNotifier,
+  storageDefiner,
 }
