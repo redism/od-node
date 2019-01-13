@@ -42,10 +42,11 @@ const driverPrototype = {
     const s3 = new AWS.S3()
     const bucketName = this._bucketName
     await new Promise((resolve, reject) => {
+      const key = `${this._prefix}${imageId}.jpg`
       s3.putObject({
         Bucket: bucketName,
         ContentType: 'image/jpeg',
-        Key: `${this._prefix}${imageId}.jpg`,
+        Key: key,
         ACL: 'public-read',
         Body: fs.createReadStream(imagePath),
       }, (err, data) => {

@@ -7,14 +7,15 @@ export function storageDefiner (options = {}) {
       build: {
         configurable: true,
         writable: false,
-        value: function () {
+        value: function (buildOptions = {}) {
           const driver = ((storageConfig, definition) => {
             const { type, options } = storageConfig
+            const opt = Object.assign({}, options, buildOptions)
             switch (type) {
               case 'local':
-                return require('./local').default(options, definition)
+                return require('./local').default(opt, definition)
               case 's3':
-                return require('./s3').default(options, definition)
+                return require('./s3').default(opt, definition)
               default:
                 throw new Error(`Unknown storage type : ${type}`)
             }
