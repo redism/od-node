@@ -32,7 +32,8 @@ const driverPrototype = {
       imagePath = obj.path
     }
 
-    const { contentType = 'image/jpeg', ext = '.jpg' } = options
+    // const { contentType = 'image/jpeg', ext = '.jpg' } = options
+    const { ext = '.jpg' } = options
 
     this._ensure.nonEmptyString(imagePath, this._paramError('Invalid image path'))
 

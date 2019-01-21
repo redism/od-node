@@ -13,7 +13,8 @@
     "lint:eslint": "eslint --ignore-path .gitignore --ignore-pattern lib",
     "lint:fix": "eslint --ignore-path .gitignore --ignore-pattern lib --fix -- . ",
     "lint:js": "npm run lint:eslint -- . ",
-    "publish": "npm run lint && npm run test && npm run build"
+    "publish": "npm run lint && npm run test && npm run build",
+    "publish:force": "npm run build"
   },
   "author": "",
   "license": "ISC",
