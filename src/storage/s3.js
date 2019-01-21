@@ -1,4 +1,5 @@
 import Debug from 'debug'
+import path from 'path'
 import { _, ensure } from 'od-js'
 import fs from 'fs'
 import uuid from 'uuid/v4'
@@ -36,7 +37,10 @@ const driverPrototype = {
       imagePath = obj.path
     }
 
-    const { fileName = '', contentType = 'image/jpeg', ext = '.jpg' } = options
+    let { fileName, mimetype, originalname, contentType, ext } = options
+    contentType = contentType || mimetype || 'image/jpeg'
+    ext = ext || (originalname ? path.extname(originalname) : null) || '.jpg'
+    fileName = fileName || originalname
 
     this._ensure.nonEmptyString(imagePath, this._paramError('Invalid image path'))
 

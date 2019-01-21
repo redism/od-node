@@ -1,6 +1,6 @@
 import _ from 'lodash'
-import mkdirp from 'mkdirp'
 import path from 'path'
+import mkdirp from 'mkdirp'
 import Debug from 'debug'
 import uuid from 'uuid/v4'
 import { ensure } from 'od-js'
@@ -33,7 +33,8 @@ const driverPrototype = {
     }
 
     // const { contentType = 'image/jpeg', ext = '.jpg' } = options
-    const { ext = '.jpg' } = options
+    let { originalname, ext } = options
+    ext = ext || (originalname ? path.extname(originalname) : null) || '.jpg'
 
     this._ensure.nonEmptyString(imagePath, this._paramError('Invalid image path'))
 
