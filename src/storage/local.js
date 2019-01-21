@@ -19,9 +19,10 @@ const driverPrototype = {
    * 이미지를 저장하고 생성된 이미지 아이디를 반환한다.
    *
    * @param obj {object|string|array} 이미지 경로 또는 multer 를 통하여 받아진 객체
+   * @param [options] {object}
    * @return {Promise.<string>}
    */
-  save: async function (obj) {
+  save: async function (obj, options = {}) {
     let imagePath
     if (_.isString(obj)) { // path
       imagePath = obj
@@ -31,10 +32,12 @@ const driverPrototype = {
       imagePath = obj.path
     }
 
+    const { contentType = 'image/jpeg', ext = '.jpg' } = options
+
     this._ensure.nonEmptyString(imagePath, this._paramError('Invalid image path'))
 
     const imageId = uuid()
-    const finalImagePath = path.join(this._basePath, this._name, `${imageId}.jpg`)
+    const finalImagePath = path.join(this._basePath, this._name, `${imageId}${ext}`)
     if (this._removeOriginal) {
       await moveFile(imagePath, finalImagePath)
     } else {

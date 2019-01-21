@@ -1,8 +1,10 @@
 import path from 'path'
+import request from 'request-promise-native'
 import { storageDefiner } from '../src/storage/definition'
 import { rmrf } from '../src/utils'
 
 const imagePath = path.join(__dirname, 'res/test.jpg')
+const pdfPath = path.join(__dirname, 'res/sample.pdf')
 
 describe('storage', () => {
   describe('local', () => {
@@ -53,5 +55,19 @@ describe('storage', () => {
       expect(typeof r).toEqual('string')
       expect(r.length).toBeGreaterThan(0)
     })
+
+    it('upload pdf using s3 /w content-disposition', async () => {
+      const options = {
+        fileName: 'sample.pdf',
+        contentType: 'application/pdf',
+        ext: '.pdf',
+      }
+      const r = await driver.save(pdfPath, options)
+      const url = `https://s3-us-west-2.amazonaws.com/gcb-testcase/${r}.pdf`
+      const res = await request({ method: 'get', url, resolveWithFullResponse: true })
+
+      expect(res.headers[ 'content-type' ]).toEqual('application/pdf')
+      expect(res.headers[ 'content-disposition' ]).toEqual('attachment; filename="sample.pdf"')
+    }, 20000)
   })
 })
