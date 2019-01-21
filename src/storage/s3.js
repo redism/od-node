@@ -37,7 +37,7 @@ const driverPrototype = {
       imagePath = obj.path
     }
 
-    let { fileName, mimetype, originalname, contentType, ext } = options
+    let { fileName, mimetype, originalname, contentType, ext, asAttachment } = options
     contentType = contentType || mimetype || 'image/jpeg'
     ext = ext || (originalname ? path.extname(originalname) : null) || '.jpg'
     fileName = fileName || originalname
@@ -49,16 +49,24 @@ const driverPrototype = {
 
     const s3 = new AWS.S3()
     const bucketName = this._bucketName
+    const key = `${this._prefix}${imageId}${ext}`
+
+    const uploadOptions = {
+      Bucket: bucketName,
+      ContentType: contentType,
+      Key: key,
+      ACL: 'public-read',
+      Body: fs.createReadStream(imagePath),
+    }
+
+    if (asAttachment) {
+      uploadOptions.ContentDisposition = `attachment; filename="${encodeURIComponent(dnName)}"`
+    } else {
+      uploadOptions.ContentDisposition = `inline; filename="${encodeURIComponent(dnName)}"`
+    }
+
     await new Promise((resolve, reject) => {
-      const key = `${this._prefix}${imageId}${ext}`
-      s3.putObject({
-        Bucket: bucketName,
-        ContentType: contentType,
-        Key: key,
-        ACL: 'public-read',
-        Body: fs.createReadStream(imagePath),
-        ContentDisposition: `attachment; filename="${dnName}"`,
-      }, (err, data) => {
+      s3.putObject(uploadOptions, (err, data) => {
         err && reject(err)
         !err && resolve(data)
       })
