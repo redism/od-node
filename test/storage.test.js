@@ -61,13 +61,14 @@ describe('storage', () => {
         fileName: 'sample.pdf',
         contentType: 'application/pdf',
         ext: '.pdf',
+        asAttachment: false,
       }
       const r = await driver.save(pdfPath, options)
       const url = `https://s3-us-west-2.amazonaws.com/gcb-testcase/${r}.pdf`
       const res = await request({ method: 'get', url, resolveWithFullResponse: true })
 
       expect(res.headers[ 'content-type' ]).toEqual('application/pdf')
-      expect(res.headers[ 'content-disposition' ]).toEqual('attachment; filename="sample.pdf"')
+      expect(res.headers[ 'content-disposition' ]).toEqual('inline; filename="sample.pdf"')
     }, 20000)
   })
 })

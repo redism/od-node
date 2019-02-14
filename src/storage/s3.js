@@ -37,7 +37,7 @@ const driverPrototype = {
       imagePath = obj.path
     }
 
-    let { fileName, mimetype, originalname, contentType, ext, asAttachment } = options
+    let { fileName, mimetype, originalname, contentType, ext, asAttachment, uploadOptions: uo = {} } = options
     contentType = contentType || mimetype || 'image/jpeg'
     ext = ext || (originalname ? path.extname(originalname) : null) || '.jpg'
     fileName = fileName || originalname
@@ -66,7 +66,8 @@ const driverPrototype = {
     }
 
     await new Promise((resolve, reject) => {
-      s3.putObject(uploadOptions, (err, data) => {
+      const s3UploadOptions = Object.assign(uploadOptions, uo)
+      s3.putObject(s3UploadOptions, (err, data) => {
         err && reject(err)
         !err && resolve(data)
       })
@@ -106,6 +107,9 @@ const driverPrototype = {
         !err && resolve(data)
       })
     })
+  },
+  get bucketName () {
+    return this._bucketName
   },
 }
 

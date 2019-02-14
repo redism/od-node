@@ -11,6 +11,7 @@ import { handlerMaker } from './handler'
 import { gmailSender } from './sendmail'
 import { SlackNotifier } from './slack'
 import { storageDefiner } from './storage/definition'
+import AWS from 'aws-sdk'
 
 const knex = Knex({ client: 'mysql' }) // use only for query-builder
 
@@ -173,6 +174,7 @@ const exports = {
   mkdirp,
   SlackNotifier,
   storageDefiner,
+  AWS,
 }
 
 export default exports
@@ -196,4 +198,5 @@ export {
   mkdirp,
   SlackNotifier,
   storageDefiner,
+  AWS,
 }
