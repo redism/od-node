@@ -6,7 +6,8 @@ class SlackNotifier {
 
     this.webHookUrl = webHookUrl
     this.attachmentOptions = {
-      author_link, author_name,
+      author_link,
+      author_name,
     }
   }
 
@@ -37,9 +38,7 @@ class SlackNotifier {
       }
 
       const json = {
-        attachments: [
-          Object.assign(attachment, this.attachmentOptions),
-        ],
+        attachments: [Object.assign(attachment, this.attachmentOptions)],
       }
 
       await request({ method: 'POST', url, json })

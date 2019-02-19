@@ -7,16 +7,22 @@ import { ensure } from 'od-js'
 const knex = Knex({ client: 'mysql' }) // use only for query-builder
 const debug = Debug('od.mysql')
 
-const DBErrorObject = msg => { return { code: 6738, status: 500, msg } }
-const DeadlockErrorObject = msg => { return { code: 5781, status: 500, msg } }
-const UnknownDBErrorObject = msg => { return { code: 5811, status: 500, msg } }
+const DBErrorObject = msg => {
+  return { code: 6738, status: 500, msg }
+}
+const DeadlockErrorObject = msg => {
+  return { code: 5781, status: 500, msg }
+}
+const UnknownDBErrorObject = msg => {
+  return { code: 5811, status: 500, msg }
+}
 
 export const isDeadLockError = err => err && err.errno && err.errno === 1213
 export const isForeignKeyError = err => err && err.errno && err.errno === 1452
 export const isDupKeyError = err => err && err.errno && err.errno === 1062
 export const getDupKeyErrorIndexName = err => {
   // ex: Duplicate entry '1023' for key 'partner_sub1_unique_index'
-  const key = err.sqlMessage.split('for key ')[ 1 ]
+  const key = err.sqlMessage.split('for key ')[1]
   return key.substring(1, key.length - 1)
 }
 
@@ -95,7 +101,7 @@ export async function connectMySQLPool (connectionOption) {
               },
               query: (...args) => {
                 return new Promise((resolve, reject) => {
-                  connection.query(...args, (err, rows) => err ? reject(err) : resolve(rows))
+                  connection.query(...args, (err, rows) => (err ? reject(err) : resolve(rows)))
                 })
               },
               commit: async () => {
@@ -140,12 +146,15 @@ export async function connectMySQLPool (connectionOption) {
      * @returns {Promise.<*|Promise>}
      */
     executeTransQueryWithRetry: async function (context, fn, options) {
-      options = Object.assign({
-        retry: 5,
-        ignoreError: false,
-        errorHandler: null,
-        deadlockInterval: 100,
-      }, options || {})
+      options = Object.assign(
+        {
+          retry: 5,
+          ignoreError: false,
+          errorHandler: null,
+          deadlockInterval: 100,
+        },
+        options || {}
+      )
 
       const trans = await this.beginTransaction(context)
       try {
@@ -200,12 +209,17 @@ export async function initMySQLPool (options = {}) {
 export function upsertSQL (tableName, dataInsert, fieldsToUpdate) {
   if (fieldsToUpdate === undefined) {
     if (_.isArray(dataInsert)) {
-      fieldsToUpdate = Object.getOwnPropertyNames(dataInsert[ 0 ])
+      fieldsToUpdate = Object.getOwnPropertyNames(dataInsert[0])
     } else {
       fieldsToUpdate = Object.getOwnPropertyNames(dataInsert)
     }
   }
 
-  return knex.raw(knex(tableName).insert(dataInsert).toQuery() + ' ON DUPLICATE KEY UPDATE ' +
-    fieldsToUpdate.map(field => `${field}=VALUES(${field})`).join(', '))
+  return knex.raw(
+    knex(tableName)
+      .insert(dataInsert)
+      .toQuery() +
+      ' ON DUPLICATE KEY UPDATE ' +
+      fieldsToUpdate.map(field => `${field}=VALUES(${field})`).join(', ')
+  )
 }

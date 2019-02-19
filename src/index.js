@@ -103,7 +103,9 @@ async function genSaltedPassword (pw, iteration = 10) {
  */
 async function checkSaltedPassword (pw, salted) {
   return new Promise((resolve, reject) => {
-    bcrypt.compare(pw, salted, (err, res) => { err ? reject(err) : resolve(res) })
+    bcrypt.compare(pw, salted, (err, res) => {
+      err ? reject(err) : resolve(res)
+    })
   })
 }
 
@@ -145,7 +147,7 @@ async function decodeJWTToken (secret, token) {
 
 async function mkdirp (path) {
   return new Promise((resolve, reject) => {
-    mkdirP(path, (err) => err ? reject(err) : resolve())
+    mkdirP(path, err => (err ? reject(err) : resolve()))
   })
 }
 

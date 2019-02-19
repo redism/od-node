@@ -29,10 +29,11 @@ const driverPrototype = {
    */
   save: async function (obj, options = {}) {
     let imagePath
-    if (_.isString(obj)) { // path
+    if (_.isString(obj)) {
+      // path
       imagePath = obj
     } else if (_.isArray(obj)) {
-      return this.save(obj[ 0 ])
+      return this.save(obj[0])
     } else if (_.isObject(obj)) {
       imagePath = obj.path
     }
@@ -74,7 +75,9 @@ const driverPrototype = {
     })
 
     if (this._removeOriginal) {
-      await new Promise(resolve => { fs.unlink(imagePath, resolve) })
+      await new Promise(resolve => {
+        fs.unlink(imagePath, resolve)
+      })
     }
 
     return imageId
@@ -127,7 +130,9 @@ export default function createLocalStorageDriver (options, definition) {
     _paramError: {
       configurable: false,
       writable: false,
-      value: name => { return { error: ({ value }) => `Invalid [${name}] - ${value} / ${typeof value}` } },
+      value: name => {
+        return { error: ({ value }) => `Invalid [${name}] - ${value} / ${typeof value}` }
+      },
     },
     _debug: {
       configurable: false,
@@ -149,12 +154,14 @@ export default function createLocalStorageDriver (options, definition) {
       writable: false,
       value: bucket,
     },
-    _prefix: { // 해당 버킷내의 경로 prefix (디렉토리)
+    _prefix: {
+      // 해당 버킷내의 경로 prefix (디렉토리)
       configurable: false,
       writable: false,
       value: prefix,
     },
-    _awsCredFilePath: { // aws access key, secret key 등을 담고 있는 json 파일의 경로
+    _awsCredFilePath: {
+      // aws access key, secret key 등을 담고 있는 json 파일의 경로
       configurable: false,
       writable: false,
       value: credential,

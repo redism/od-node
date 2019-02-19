@@ -12,7 +12,7 @@ const driverPrototype = {
 
     this._debug(`Creating storage path : ${storagePath}`)
     await new Promise((resolve, reject) => {
-      mkdirp(storagePath, (err) => err ? reject(err) : resolve())
+      mkdirp(storagePath, err => (err ? reject(err) : resolve()))
     })
   },
   /**
@@ -24,10 +24,11 @@ const driverPrototype = {
    */
   save: async function (obj, options = {}) {
     let imagePath
-    if (_.isString(obj)) { // path
+    if (_.isString(obj)) {
+      // path
       imagePath = obj
     } else if (_.isArray(obj)) {
-      return this.save(obj[ 0 ])
+      return this.save(obj[0])
     } else if (_.isObject(obj)) {
       imagePath = obj.path
     }
@@ -65,7 +66,9 @@ export default function createLocalStorageDriver (options, definition) {
     _paramError: {
       configurable: false,
       writable: false,
-      value: name => { return { error: ({ value }) => `Invalid [${name}] - ${value} / ${typeof value}` } },
+      value: name => {
+        return { error: ({ value }) => `Invalid [${name}] - ${value} / ${typeof value}` }
+      },
     },
     _debug: {
       configurable: false,

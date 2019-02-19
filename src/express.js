@@ -17,15 +17,18 @@ export default function ODApp (config = {}) {
   const storageDefinitions = []
   const initializations = []
   const di = {
-    options: Object.assign({
-      PORT: 8082,
-      MYSQL: {},
-      COOKIE_SECRET: 'od-cookie-secret',
-      ENABLE_CORS: false,
-      MORGAN: '',
-      BODY_PARSER_JSON_LIMIT: '1mb',
-      STORAGE: {},
-    }, config),
+    options: Object.assign(
+      {
+        PORT: 8082,
+        MYSQL: {},
+        COOKIE_SECRET: 'od-cookie-secret',
+        ENABLE_CORS: false,
+        MORGAN: '',
+        BODY_PARSER_JSON_LIMIT: '1mb',
+        STORAGE: {},
+      },
+      config
+    ),
     express: app,
     httpServer,
     storage: {}, // name - driver pair
@@ -88,7 +91,10 @@ export default function ODApp (config = {}) {
             res.header('Access-Control-Allow-Credentials', true)
             res.header('Access-Control-Allow-Origin', req.headers.origin)
             res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE')
-            res.header('Access-Control-Allow-Headers', 'X-Requested-With, X-HTTP-Method-Override, Content-Type, Accept, DeviceInfo, Authorization')
+            res.header(
+              'Access-Control-Allow-Headers',
+              'X-Requested-With, X-HTTP-Method-Override, Content-Type, Accept, DeviceInfo, Authorization'
+            )
             next()
           })
         }
@@ -103,7 +109,7 @@ export default function ODApp (config = {}) {
         await Promise.map(storageDefinitions, definition => {
           const { name, driver } = definition
           debug(`Initializing storage driver for ${name}`)
-          di.storage[ name ] = driver
+          di.storage[name] = driver
           return driver.init()
         })
 
@@ -117,9 +123,12 @@ export default function ODApp (config = {}) {
         }
 
         handlerDefinitions.forEach(definition => {
-          const { endpoint: { url, method }, name } = definition
+          const {
+            endpoint: { url, method },
+            name,
+          } = definition
           debug(`Mounting ${name} for [${method}] ${url}`)
-          app[ method ](url, contextWrapper.wrap(di, definition))
+          app[method](url, contextWrapper.wrap(di, definition))
         })
 
         if (this.afterHandlerMounted) {
@@ -149,7 +158,7 @@ export default function ODApp (config = {}) {
         // Initialization routines
         //
         for (let i = 0; i < initializations.length; i++) {
-          await initializations[ i ]()
+          await initializations[i]()
         }
 
         //

@@ -9,13 +9,16 @@ import _ from 'lodash'
 import Debug from 'debug'
 
 function b64EncodeUnicode (str) {
-  return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function (match, p1) {
-    return String.fromCharCode(parseInt(p1, 16))
-  }))
+  return btoa(
+    encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function (match, p1) {
+      return String.fromCharCode(parseInt(p1, 16))
+    })
+  )
 }
 
 function contexter (di, definition, options) {
-  if (options.type !== 'express') { // we only support express node.js server for now.
+  if (options.type !== 'express') {
+    // we only support express node.js server for now.
     throw new Error(`Unknown type ${options.type}`)
   }
 
@@ -24,14 +27,22 @@ function contexter (di, definition, options) {
   const contextPerDefinition = Object.create(null, {
     di: { configurable: false, writable: false, value: di },
     _deferred: { configurable: false, writable: true, value: [] },
-    defer: { configurable: false, writable: false, value: function (task) { this._deferred.push(task) } },
+    defer: {
+      configurable: false,
+      writable: false,
+      value: function (task) {
+        this._deferred.push(task)
+      },
+    },
     getMySQLConnection: {
       configurable: false,
       writable: false,
       value: () => di.mysql,
     },
     debug: {
-      configurable: true, writable: false, value: Debug(`od:${definition.name}`),
+      configurable: true,
+      writable: false,
+      value: Debug(`od:${definition.name}`),
     },
     ensure: { configurable: false, writable: false, value: ensure },
     getParam: {
@@ -41,9 +52,8 @@ function contexter (di, definition, options) {
         if (_.isArray(keys)) {
           return keys.map(key => this.getParam(key))
         } else {
-          return takeIf(this.express.req.params[ keys ],
-            () => takeIf(this.express.req.body[ keys ],
-              () => this.express.req.query[ keys ])
+          return takeIf(this.express.req.params[keys], () =>
+            takeIf(this.express.req.body[keys], () => this.express.req.query[keys])
           )
         }
       },
@@ -54,7 +64,8 @@ function contexter (di, definition, options) {
       value: function (keys) {
         const ret = {}
         let wrapper = v => v
-        if (isObjectSanitizer(keys)) { // for convenience, if sanitizer.object is passed, use that.
+        if (isObjectSanitizer(keys)) {
+          // for convenience, if sanitizer.object is passed, use that.
           wrapper = keys
           keys = getSanitizerOptions(keys).keys
         }
@@ -62,7 +73,7 @@ function contexter (di, definition, options) {
         keys.forEach(k => {
           const v = this.getParam(k)
           if (v !== undefined) {
-            ret[ k ] = v
+            ret[k] = v
           }
         })
         return wrapper(ret)
@@ -84,9 +95,9 @@ function contexter (di, definition, options) {
 
         if (_.isArray(keys)) {
           const files = await Promise.map(keys, key => this.getFiles(key))
-          return files.map(v => _.isArray(v) ? v[ 0 ] : v)
+          return files.map(v => (_.isArray(v) ? v[0] : v))
         } else {
-          return this.express.req.files ? this.express.req.files[ keys ] : undefined
+          return this.express.req.files ? this.express.req.files[keys] : undefined
         }
       },
     },
@@ -107,7 +118,7 @@ function contexter (di, definition, options) {
       configurable: false,
       writable: false,
       value: function (name) {
-        return this.express.req.signedCookies[ name ]
+        return this.express.req.signedCookies[name]
       },
     },
     setSignedCookie: {
@@ -132,9 +143,12 @@ function contexter (di, definition, options) {
 }
 
 export function ContextWrapper (options = {}) {
-  options = Object.assign({
-    type: 'express',
-  }, options)
+  options = Object.assign(
+    {
+      type: 'express',
+    },
+    options
+  )
 
   switch (options.type) {
     case 'express':
@@ -147,20 +161,23 @@ export function ContextWrapper (options = {}) {
             return function (req, res, next) {
               const context = createContextPerDefinition(req, res)
               Promise.resolve(definition.handler(context))
-                .then(response => {
-                  if (!res.headersSent) {
-                    res.json({ data: response })
+                .then(
+                  response => {
+                    if (!res.headersSent) {
+                      res.json({ data: response })
+                    }
+                  },
+                  ex => {
+                    // check handled error here
+                    // console.log(`Handler error`, ex) // TODO: 왜 default error handler 를 타지 않는가?
+                    next(ex)
                   }
-                }, ex => {
-                  // check handled error here
-                  // console.log(`Handler error`, ex) // TODO: 왜 default error handler 를 타지 않는가?
-                  next(ex)
-                })
+                )
                 .finally(async () => {
                   // run deferred tasks.
                   for (let i = 0; i < context._deferred.length; i++) {
                     try {
-                      await Promise.resolve(context._deferred[ i ]())
+                      await Promise.resolve(context._deferred[i]())
                     } catch (ex) {
                       console.error(ex)
                     }

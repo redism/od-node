@@ -60,13 +60,7 @@ export function handlerDefiner (options) {
 const noop = v => v
 
 export function handlerMaker (options = {}) {
-  let {
-    name,
-    tableName,
-    preprocessor = {},
-    postprocessor = {},
-    sanitizer = {},
-  } = options
+  let { name, tableName, preprocessor = {}, postprocessor = {}, sanitizer = {} } = options
 
   ensure.nonEmptyString(name, 'handlerMaker requires name option.')
   ensure.nonEmptyString(tableName, 'handlerMaker requires tableName option.')
@@ -97,8 +91,11 @@ export function handlerMaker (options = {}) {
 
     id = sanitizer.id(id || context.getParam('id'))
     const conn = context.getMySQLConnection()
-    const q = knex(tableName).select().where('id', id).toString()
-    const [ row ] = await conn.query(q)
+    const q = knex(tableName)
+      .select()
+      .where('id', id)
+      .toString()
+    const [row] = await conn.query(q)
 
     await Promise.resolve(getPostprocessor(context, { row }))
 
@@ -113,7 +110,9 @@ export function handlerMaker (options = {}) {
     const conn = context.getMySQLConnection()
 
     const data = context.getParamObject(sanitizer.add)
-    const sql = knex(tableName).insert(data).toString()
+    const sql = knex(tableName)
+      .insert(data)
+      .toString()
     try {
       const { insertId } = await conn.query(sql)
 
@@ -135,7 +134,10 @@ export function handlerMaker (options = {}) {
     data = data ? sanitizer.modify(data) : context.getParamObject(sanitizer.modify)
 
     const conn = context.getMySQLConnection()
-    const q = knex(tableName).update(data).where('id', id).toString()
+    const q = knex(tableName)
+      .update(data)
+      .where('id', id)
+      .toString()
     const { affectedRows } = await conn.query(q)
     context.ensure(affectedRows === 1, `Cannot find data of id [${id}]`)
 
@@ -144,10 +146,7 @@ export function handlerMaker (options = {}) {
     return dataReloaded
   }
 
-  const idSanitizer = sane.anyOf(
-    sane.array(sanitizer.id),
-    sanitizer.id,
-  )
+  const idSanitizer = sane.anyOf(sane.array(sanitizer.id), sanitizer.id)
   const removeHandlerByHandlerMaker = async function removeHandlerByHandlerMaker (context, id) {
     await Promise.resolve(preprocessor.common(context))
     await Promise.resolve(removePreprocessor(context))
@@ -159,16 +158,28 @@ export function handlerMaker (options = {}) {
     // 그냥 진행한다. 2018-07-30 11:11
     let q
     if (_.isArray(id)) {
-      q = knex(tableName).whereIn('id', id).select().toString()
+      q = knex(tableName)
+        .whereIn('id', id)
+        .select()
+        .toString()
     } else {
-      q = knex(tableName).where('id', id).select().toString()
+      q = knex(tableName)
+        .where('id', id)
+        .select()
+        .toString()
     }
     const data = await conn.query(q)
 
     if (_.isArray(id)) {
-      q = knex(tableName).whereIn('id', id).del().toString()
+      q = knex(tableName)
+        .whereIn('id', id)
+        .del()
+        .toString()
     } else {
-      q = knex(tableName).where('id', id).del().toString()
+      q = knex(tableName)
+        .where('id', id)
+        .del()
+        .toString()
     }
     const { affectedRows } = await conn.query(q)
     await Promise.resolve(removePostprocessor(context, { id, data, op: 'remove' }))
@@ -186,29 +197,16 @@ export function handlerMaker (options = {}) {
         prefix += '/'
       }
 
-      app.defineHandler(`add${name}`, d =>
-        d.handler(addHandlerByHandlerMaker)
-          .endpoint('post', `${prefix}`)
-      )
+      app.defineHandler(`add${name}`, d => d.handler(addHandlerByHandlerMaker).endpoint('post', `${prefix}`))
 
-      app.defineHandler(`get${name}`, d =>
-        d.handler(getHandlerByHandlerMaker)
-          .endpoint('get', `${prefix}:id`)
-      )
+      app.defineHandler(`get${name}`, d => d.handler(getHandlerByHandlerMaker).endpoint('get', `${prefix}:id`))
 
-      app.defineHandler(`modify${name}`, d =>
-        d.handler(modifyHandlerByHandlerMaker)
-          .endpoint('post', `${prefix}:id`)
-      )
+      app.defineHandler(`modify${name}`, d => d.handler(modifyHandlerByHandlerMaker).endpoint('post', `${prefix}:id`))
 
-      app.defineHandler(`remove${name}`, d =>
-        d.handler(removeHandlerByHandlerMaker)
-          .endpoint('delete', `${prefix}:id`)
-      )
+      app.defineHandler(`remove${name}`, d => d.handler(removeHandlerByHandlerMaker).endpoint('delete', `${prefix}:id`))
 
       app.defineHandler(`removeMulti${name}`, d =>
-        d.handler(removeHandlerByHandlerMaker)
-          .endpoint('delete', `${prefix}`)
+        d.handler(removeHandlerByHandlerMaker).endpoint('delete', `${prefix}`)
       )
     },
   }
