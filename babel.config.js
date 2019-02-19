@@ -15,6 +15,8 @@ module.exports = function (api) {
   ]
 
   const plugins = [
+    'babel-plugin-transform-promise-to-bluebird',
+
     // Stage 2
     [ '@babel/plugin-proposal-decorators', { legacy: true } ],
     '@babel/plugin-proposal-function-sent',
