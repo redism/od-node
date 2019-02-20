@@ -1,9 +1,10 @@
-import Debug from 'debug'
-import path from 'path'
-import { _, ensure } from 'od-js'
-import fs from 'fs'
-import uuid from 'uuid/v4'
+/* eslint-disable no-underscore-dangle */
 import AWS from 'aws-sdk'
+import Debug from 'debug'
+import fs from 'fs'
+import { _, ensure } from 'od-js'
+import path from 'path'
+import uuid from 'uuid/v4'
 
 // http://docs.aws.amazon.com/cli/latest/userguide/cli-environment.html
 //
@@ -11,7 +12,7 @@ import AWS from 'aws-sdk'
 // AWS_SECRET_ACCESS_KEY
 // AWS_DEFAULT_REGION
 const driverPrototype = {
-  init: async function () {
+  async init() {
     AWS.config.loadFromPath(this._awsCredFilePath)
     // const storagePath = path.join(this._basePath, this._name)
     //
@@ -27,7 +28,7 @@ const driverPrototype = {
    * @param [options] {object}
    * @return {Promise.<string>}
    */
-  save: async function (obj, options = {}) {
+  async save(obj, options = {}) {
     let imagePath
     if (_.isString(obj)) {
       // path
@@ -38,7 +39,8 @@ const driverPrototype = {
       imagePath = obj.path
     }
 
-    let { fileName, mimetype, originalname, contentType, ext, asAttachment, uploadOptions: uo = {} } = options
+    let { fileName, contentType, ext } = options
+    const { mimetype, originalname, asAttachment, uploadOptions: uo = {} } = options
     contentType = contentType || mimetype || 'image/jpeg'
     ext = ext || (originalname ? path.extname(originalname) : null) || '.jpg'
     fileName = fileName || originalname
@@ -82,16 +84,16 @@ const driverPrototype = {
 
     return imageId
   },
-  listBucket: async function (maxSize = 1000) {
+  async listBucket(maxSize = 1000) {
     return new Promise((resolve, reject) => {
       const s3 = new AWS.S3()
-      s3.listObjects({ Bucket: this._bucketName, MaxKeys: 1000 }, (err, data) => {
+      s3.listObjects({ Bucket: this._bucketName, MaxKeys: maxSize }, (err, data) => {
         err && reject(err)
         !err && resolve(data)
       })
     })
   },
-  emptyBucket: async function () {
+  async emptyBucket() {
     const data = await this.listBucket()
     const param = {
       Bucket: this._bucketName,
@@ -111,12 +113,12 @@ const driverPrototype = {
       })
     })
   },
-  get bucketName () {
+  get bucketName() {
     return this._bucketName
   },
 }
 
-export default function createLocalStorageDriver (options, definition) {
+export default function createLocalStorageDriver(options, definition) {
   // TODO: sanitize options
   const { prefix = '', credential, bucket, removeOriginal = true } = options
   const { name } = definition

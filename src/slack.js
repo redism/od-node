@@ -2,6 +2,7 @@ import request from 'request-promise-native'
 
 class SlackNotifier {
   constructor (webHookUrl, options = {}) {
+    // eslint-disable-next-line camelcase
     const { author_name, author_link } = options
 
     this.webHookUrl = webHookUrl

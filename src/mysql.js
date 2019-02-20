@@ -26,20 +26,20 @@ export const getDupKeyErrorIndexName = err => {
   return key.substring(1, key.length - 1)
 }
 
-export async function connectMySQLPool (connectionOption) {
+export async function connectMySQLPool(connectionOption) {
   const pool = mysql.createPool(connectionOption)
 
   return {
     end: () => {
       return new Promise(resolve => pool.end(resolve))
     },
-    query: function query (...args) {
+    query: function query(...args) {
       const df = {}
       df.promise = new Promise((resolve, reject) => {
         df.resolve = resolve
         df.reject = reject
       })
-      pool.query(...args, function (err, rows) {
+      pool.query(...args, function query(err, rows) {
         if (err) {
           df.reject(err)
         } else {
@@ -48,11 +48,12 @@ export async function connectMySQLPool (connectionOption) {
       })
       return df.promise
     },
-    beginTransaction: function beginTransaction (context) {
+    beginTransaction: function beginTransaction(context) {
       let isTransactionFinished = false
       return new Promise((resolve, reject) => {
         let isReleased = false
 
+        // eslint-disable-next-line consistent-return
         pool.getConnection((err, connection) => {
           if (err) {
             return reject(err)
@@ -65,6 +66,7 @@ export async function connectMySQLPool (connectionOption) {
             }
           }
 
+          // eslint-disable-next-line consistent-return
           connection.beginTransaction(err => {
             if (err) {
               release()
@@ -145,7 +147,9 @@ export async function connectMySQLPool (connectionOption) {
      * @config errorHandler {function}
      * @returns {Promise.<*|Promise>}
      */
-    executeTransQueryWithRetry: async function (context, fn, options) {
+    // eslint-disable-next-line consistent-return
+    async executeTransQueryWithRetry(context, fn, options) {
+      // eslint-disable-next-line no-param-reassign
       options = Object.assign(
         {
           retry: 5,
@@ -169,7 +173,8 @@ export async function connectMySQLPool (connectionOption) {
         if (isDeadLockError(ex)) {
           if (options.retry > 0) {
             await Promise.delay(options.deadlockInterval)
-            options.retry--
+            // eslint-disable-next-line no-param-reassign
+            options.retry -= 1
             return this.executeTransQueryWithRetry(context, fn, options)
           }
           ensure(!!options.ignoreError, DeadlockErrorObject('Deadlock found'))
@@ -193,7 +198,8 @@ const mysqlDefaultOptions = {
   debug: parseInt(process.env.mysql_debug, 10) === 1,
 }
 
-export async function initMySQLPool (options = {}) {
+export async function initMySQLPool(options = {}) {
+  // eslint-disable-next-line no-param-reassign
   options = Object.assign(mysqlDefaultOptions, options)
   return connectMySQLPool(options)
 }
@@ -206,20 +212,20 @@ export async function initMySQLPool (options = {}) {
  * @param [fieldsToUpdate] {array}
  * @return {*}
  */
-export function upsertSQL (tableName, dataInsert, fieldsToUpdate) {
+export function upsertSQL(tableName, dataInsert, fieldsToUpdate) {
   if (fieldsToUpdate === undefined) {
     if (_.isArray(dataInsert)) {
+      // eslint-disable-next-line no-param-reassign
       fieldsToUpdate = Object.getOwnPropertyNames(dataInsert[0])
     } else {
+      // eslint-disable-next-line no-param-reassign
       fieldsToUpdate = Object.getOwnPropertyNames(dataInsert)
     }
   }
 
   return knex.raw(
-    knex(tableName)
+    `${knex(tableName)
       .insert(dataInsert)
-      .toQuery() +
-      ' ON DUPLICATE KEY UPDATE ' +
-      fieldsToUpdate.map(field => `${field}=VALUES(${field})`).join(', ')
+      .toQuery()} ON DUPLICATE KEY UPDATE ${fieldsToUpdate.map(field => `${field}=VALUES(${field})`).join(', ')}`
   )
 }

@@ -1,17 +1,18 @@
-import mysql from 'mysql'
-import mkdirP from 'mkdirp'
+/* eslint-disable no-param-reassign */
+import AWS from 'aws-sdk'
 import bcrypt from 'bcrypt'
-import Knex from 'knex'
-import moment from 'moment'
 import jwt from 'jsonwebtoken'
+import Knex from 'knex'
+import mkdirP from 'mkdirp'
+import moment from 'moment'
+import mysql from 'mysql'
 import { ensure } from 'od-js'
 import ODApp from './express'
-import { getDupKeyErrorIndexName, isDeadLockError, isDupKeyError, isForeignKeyError, upsertSQL } from './mysql'
 import { handlerMaker } from './handler'
+import { getDupKeyErrorIndexName, isDeadLockError, isDupKeyError, isForeignKeyError, upsertSQL } from './mysql'
 import { gmailSender } from './sendmail'
 import { SlackNotifier } from './slack'
 import { storageDefiner } from './storage/definition'
-import AWS from 'aws-sdk'
 
 const knex = Knex({ client: 'mysql' }) // use only for query-builder
 
@@ -32,9 +33,10 @@ let getMySQLConnection
  * }
  * @return {Connection}
  */
-function getMySQLConnectionLambda (options) {
+function getMySQLConnectionLambda(options) {
   if (options === undefined || options === null) {
     if (getMySQLConnection.options) {
+      // eslint-disable-next-line prefer-destructuring
       options = getMySQLConnection.options
     } else {
       options = {
@@ -51,7 +53,7 @@ function getMySQLConnectionLambda (options) {
   const conn = mysql.createConnection(options)
 
   const orgQuery = conn.query.bind(conn)
-  conn.query = function (query) {
+  conn.query = function query(query) {
     return new Promise((resolve, reject) => {
       orgQuery(query, (err, res) => {
         err ? reject(err) : resolve(res)
@@ -66,7 +68,7 @@ function getMySQLConnectionLambda (options) {
  *
  * @param options {object}
  */
-getMySQLConnectionLambda.setOptions = function (options) {
+getMySQLConnectionLambda.setOptions = function setOptions(options) {
   getMySQLConnection.options = options
 }
 
@@ -77,7 +79,7 @@ getMySQLConnectionLambda.setOptions = function (options) {
  * @param iteration {number=10}
  * @return {Promise}
  */
-async function genSaltedPassword (pw, iteration = 10) {
+async function genSaltedPassword(pw, iteration = 10) {
   return new Promise((resolve, reject) => {
     bcrypt.genSalt(iteration, (err, salt) => {
       if (err) {
@@ -101,7 +103,7 @@ async function genSaltedPassword (pw, iteration = 10) {
  * @param salted {string}
  * @return {Promise<Boolean>}
  */
-async function checkSaltedPassword (pw, salted) {
+async function checkSaltedPassword(pw, salted) {
   return new Promise((resolve, reject) => {
     bcrypt.compare(pw, salted, (err, res) => {
       err ? reject(err) : resolve(res)
@@ -116,7 +118,7 @@ async function checkSaltedPassword (pw, salted) {
  * @param data {object}
  * @return {Promise}
  */
-async function encodeJWTToken (secret, data) {
+async function encodeJWTToken(secret, data) {
   return new Promise((resolve, reject) => {
     jwt.sign(data, secret, { algorithm: 'HS256' }, (err, res) => {
       if (err) {
@@ -137,7 +139,7 @@ async function encodeJWTToken (secret, data) {
  * @param token {string}
  * @return {Promise<Object>}
  */
-async function decodeJWTToken (secret, token) {
+async function decodeJWTToken(secret, token) {
   return new Promise((resolve, reject) => {
     jwt.verify(token, secret, (err, res) => {
       err ? reject(err) : resolve(res)
@@ -145,7 +147,7 @@ async function decodeJWTToken (secret, token) {
   })
 }
 
-async function mkdirp (path) {
+async function mkdirp(path) {
   return new Promise((resolve, reject) => {
     mkdirP(path, err => (err ? reject(err) : resolve()))
   })

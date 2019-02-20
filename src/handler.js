@@ -1,13 +1,13 @@
-import _ from 'lodash'
 import Knex from 'knex'
+import _ from 'lodash'
 import { ensure, sanitizer as Sanitizer } from 'od-js'
 import { isForeignKeyError } from './mysql'
 
 const knex = Knex({ client: 'mysql' })
 const sane = Sanitizer()
 
-export function handlerDefiner (options) {
-  return function defineHandler (name) {
+export function handlerDefiner() {
+  return function defineHandler(name) {
     const d = {
       name,
       handler: null,
@@ -19,7 +19,7 @@ export function handlerDefiner (options) {
       name: {
         configurable: false,
         writable: false,
-        value: function (v) {
+        value(v) {
           d.name = v
           return this
         },
@@ -27,7 +27,7 @@ export function handlerDefiner (options) {
       handler: {
         configurable: false,
         writable: false,
-        value: function (v) {
+        value(v) {
           d.handler = v
           return this
         },
@@ -35,7 +35,7 @@ export function handlerDefiner (options) {
       multer: {
         configurable: false,
         writable: false,
-        value: function (v) {
+        value(v) {
           d.options.multer = v
           return this
         },
@@ -43,7 +43,7 @@ export function handlerDefiner (options) {
       endpoint: {
         configurable: false,
         writable: false,
-        value: function (method, url) {
+        value(method, url) {
           d.endpoint = { method, url }
           return this
         },
@@ -59,8 +59,9 @@ export function handlerDefiner (options) {
 
 const noop = v => v
 
-export function handlerMaker (options = {}) {
-  let { name, tableName, preprocessor = {}, postprocessor = {}, sanitizer = {} } = options
+export function handlerMaker(options = {}) {
+  const { name, tableName, postprocessor = {}, sanitizer = {} } = options
+  let { preprocessor = {} } = options
 
   ensure.nonEmptyString(name, 'handlerMaker requires name option.')
   ensure.nonEmptyString(tableName, 'handlerMaker requires tableName option.')
@@ -85,10 +86,11 @@ export function handlerMaker (options = {}) {
   const modifyPostprocessor = postprocessor.modify || noop
   const removePostprocessor = postprocessor.remove || noop
 
-  async function getHandlerByHandlerMaker (context, id) {
+  async function getHandlerByHandlerMaker(context, id) {
     await Promise.resolve(preprocessor.common(context))
     await Promise.resolve(getPreprocessor(context))
 
+    // eslint-disable-next-line no-param-reassign
     id = sanitizer.id(id || context.getParam('id'))
     const conn = context.getMySQLConnection()
     const q = knex(tableName)
@@ -103,7 +105,7 @@ export function handlerMaker (options = {}) {
     return sanitizer.get(row)
   }
 
-  async function addHandlerByHandlerMaker (context) {
+  async function addHandlerByHandlerMaker(context) {
     await Promise.resolve(preprocessor.common(context))
     await Promise.resolve(addPreprocessor(context))
 
@@ -124,13 +126,16 @@ export function handlerMaker (options = {}) {
       }
       context.ensure(false, `Unknown error occurred while inserting ${name} - ${ex.message}`)
     }
+    return undefined
   }
 
-  async function modifyHandlerByHandlerMaker (context, id, data) {
+  async function modifyHandlerByHandlerMaker(context, id, data) {
     await Promise.resolve(preprocessor.common(context))
     await Promise.resolve(modifyPreprocessor(context))
 
+    // eslint-disable-next-line no-param-reassign
     id = sanitizer.id(id || context.getParam('id'))
+    // eslint-disable-next-line
     data = data ? sanitizer.modify(data) : context.getParamObject(sanitizer.modify)
 
     const conn = context.getMySQLConnection()
@@ -147,10 +152,11 @@ export function handlerMaker (options = {}) {
   }
 
   const idSanitizer = sane.anyOf(sane.array(sanitizer.id), sanitizer.id)
-  const removeHandlerByHandlerMaker = async function removeHandlerByHandlerMaker (context, id) {
+  const removeHandlerByHandlerMaker = async function removeHandlerByHandlerMaker(context, id) {
     await Promise.resolve(preprocessor.common(context))
     await Promise.resolve(removePreprocessor(context))
 
+    // eslint-disable-next-line no-param-reassign
     id = idSanitizer(id || context.getParam('id'))
     const conn = context.getMySQLConnection()
 
@@ -194,6 +200,7 @@ export function handlerMaker (options = {}) {
     remove: removeHandlerByHandlerMaker,
     route: (app, prefix) => {
       if (!prefix.endsWith('/')) {
+        // eslint-disable-next-line no-param-reassign
         prefix += '/'
       }
 

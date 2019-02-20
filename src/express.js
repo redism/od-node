@@ -1,16 +1,16 @@
-import express from 'express'
-import Debug from 'debug'
-import morgan from 'morgan'
-import cookieParser from 'cookie-parser'
 import bodyParser from 'body-parser'
+import cookieParser from 'cookie-parser'
+import Debug from 'debug'
+import express from 'express'
 import http from 'http'
+import morgan from 'morgan'
+import { handlerDefiner } from './handler'
 
 import { initMySQLPool } from './mysql'
 import { ContextWrapper } from './server-context'
-import { handlerDefiner } from './handler'
 import { storageDefiner } from './storage/definition'
 
-export default function ODApp (config = {}) {
+export default function ODApp(config = {}) {
   const app = express()
   const httpServer = http.createServer(app)
   const handlerDefinitions = []
@@ -42,7 +42,7 @@ export default function ODApp (config = {}) {
     addInit: {
       writable: false,
       configurable: true,
-      value: function (initCode) {
+      value(initCode) {
         initializations.push(() => Promise.resolve(initCode()))
       },
     },
@@ -54,7 +54,7 @@ export default function ODApp (config = {}) {
     defineHandler: {
       writable: false,
       configurable: false,
-      value: function (name, cb) {
+      value(name, cb) {
         const definer = defineHandler(name)
         cb(definer)
         handlerDefinitions.push(definer.build())
@@ -63,7 +63,7 @@ export default function ODApp (config = {}) {
     defineStorage: {
       writable: false,
       configurable: true,
-      value: function (name, cb) {
+      value(name, cb) {
         const definer = defineStorage(name)
         cb && cb(definer)
         storageDefinitions.push(definer.build())
@@ -72,7 +72,7 @@ export default function ODApp (config = {}) {
     run: {
       writable: false,
       configurable: false,
-      value: async function ({ noListen = false } = {}) {
+      async value({ noListen = false } = {}) {
         const { options } = di
 
         //
@@ -87,7 +87,7 @@ export default function ODApp (config = {}) {
         //
         app.use(cookieParser(options.COOKIE_SECRET))
         if (options.ENABLE_CORS) {
-          app.use(function (req, res, next) {
+          app.use(function corsHandler(req, res, next) {
             res.header('Access-Control-Allow-Credentials', true)
             res.header('Access-Control-Allow-Origin', req.headers.origin)
             res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE')
@@ -138,7 +138,8 @@ export default function ODApp (config = {}) {
         //
         // Mount final error logger
         //
-        app.use(function (err, req, res, next) {
+        // eslint-disable-next-line no-unused-vars
+        app.use(function errorHandler(err, req, res, next) {
           di.onError && di.onError(err)
           if (err.handled) {
             // console.log(`Handler returned error : `, err)
@@ -157,7 +158,8 @@ export default function ODApp (config = {}) {
         //
         // Initialization routines
         //
-        for (let i = 0; i < initializations.length; i++) {
+        for (let i = 0; i < initializations.length; i += 1) {
+          // eslint-disable-next-line no-await-in-loop
           await initializations[i]()
         }
 
@@ -173,7 +175,7 @@ export default function ODApp (config = {}) {
     stop: {
       writable: false,
       configurable: false,
-      value: async function () {
+      async value() {
         await di.mysql.end()
       },
     },

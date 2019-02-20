@@ -1,3 +1,4 @@
+/* eslint-disable no-underscore-dangle */
 import _ from 'lodash'
 import path from 'path'
 import mkdirp from 'mkdirp'
@@ -7,7 +8,7 @@ import { ensure } from 'od-js'
 import { copyFile, moveFile } from '../utils'
 
 const driverPrototype = {
-  init: async function () {
+  async init() {
     const storagePath = path.join(this._basePath, this._name)
 
     this._debug(`Creating storage path : ${storagePath}`)
@@ -22,7 +23,7 @@ const driverPrototype = {
    * @param [options] {object}
    * @return {Promise.<string>}
    */
-  save: async function (obj, options = {}) {
+  async save(obj, options = {}) {
     let imagePath
     if (_.isString(obj)) {
       // path
@@ -34,7 +35,8 @@ const driverPrototype = {
     }
 
     // const { contentType = 'image/jpeg', ext = '.jpg' } = options
-    let { originalname, ext } = options
+    const { originalname } = options
+    let { ext } = options
     ext = ext || (originalname ? path.extname(originalname) : null) || '.jpg'
 
     this._ensure.nonEmptyString(imagePath, this._paramError('Invalid image path'))
@@ -51,7 +53,7 @@ const driverPrototype = {
   },
 }
 
-export default function createLocalStorageDriver (options, definition) {
+export default function createLocalStorageDriver(options, definition) {
   // TODO: sanitize options
   const { path, removeOriginal = true } = options
   const { name } = definition

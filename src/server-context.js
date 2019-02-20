@@ -1,22 +1,23 @@
+/* eslint-disable no-underscore-dangle */
+import btoa from 'btoa'
+import Debug from 'debug'
+import _ from 'lodash'
 /**
  *
  * Context to use from server handlers
  *
- **/
+ * */
 import { ensure, getSanitizerOptions, isObjectSanitizer } from 'od-js'
-import btoa from 'btoa'
-import _ from 'lodash'
-import Debug from 'debug'
 
-function b64EncodeUnicode (str) {
+function b64EncodeUnicode(str) {
   return btoa(
-    encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function (match, p1) {
+    encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function charFrom(match, p1) {
       return String.fromCharCode(parseInt(p1, 16))
     })
   )
 }
 
-function contexter (di, definition, options) {
+function contexter(di, definition, options) {
   if (options.type !== 'express') {
     // we only support express node.js server for now.
     throw new Error(`Unknown type ${options.type}`)
@@ -30,7 +31,7 @@ function contexter (di, definition, options) {
     defer: {
       configurable: false,
       writable: false,
-      value: function (task) {
+      value(task) {
         this._deferred.push(task)
       },
     },
@@ -48,25 +49,25 @@ function contexter (di, definition, options) {
     getParam: {
       configurable: false,
       writable: false,
-      value: function (keys) {
+      value(keys) {
         if (_.isArray(keys)) {
           return keys.map(key => this.getParam(key))
-        } else {
-          return takeIf(this.express.req.params[keys], () =>
-            takeIf(this.express.req.body[keys], () => this.express.req.query[keys])
-          )
         }
+        return takeIf(this.express.req.params[keys], () =>
+          takeIf(this.express.req.body[keys], () => this.express.req.query[keys])
+        )
       },
     },
     getParamObject: {
       configurable: false,
       writable: false,
-      value: function (keys) {
+      value(keys) {
         const ret = {}
         let wrapper = v => v
         if (isObjectSanitizer(keys)) {
           // for convenience, if sanitizer.object is passed, use that.
           wrapper = keys
+          // eslint-disable-next-line no-param-reassign,prefer-destructuring
           keys = getSanitizerOptions(keys).keys
         }
 
@@ -82,7 +83,7 @@ function contexter (di, definition, options) {
     getFiles: {
       configurable: false,
       writable: false,
-      value: async function getFiles (keys) {
+      value: async function getFiles(keys) {
         if (!this.fileModuleInitialized) {
           ensure(definition.options.multer, 'multer not defined.')
           await new Promise((resolve, reject) => {
@@ -96,20 +97,19 @@ function contexter (di, definition, options) {
         if (_.isArray(keys)) {
           const files = await Promise.map(keys, key => this.getFiles(key))
           return files.map(v => (_.isArray(v) ? v[0] : v))
-        } else {
-          return this.express.req.files ? this.express.req.files[keys] : undefined
         }
+        return this.express.req.files ? this.express.req.files[keys] : undefined
       },
     },
     sendFileFromMemory: {
       configurable: false,
       writable: false,
-      value: async function sendFileFromMemory (fileName, contentType, data) {
-        const res = this.express.res
+      value: async function sendFileFromMemory(fileName, contentType, data) {
+        const { res } = this.express
         const base64Encoded = b64EncodeUnicode(data)
         const contents = Buffer.from(base64Encoded, 'base64')
 
-        res.setHeader('Content-Disposition', 'attachment; filename=' + fileName)
+        res.setHeader('Content-Disposition', `attachment; filename=${fileName}`)
         res.setHeader('Content-Type', contentType)
         return res.status(200).send(contents)
       },
@@ -117,20 +117,20 @@ function contexter (di, definition, options) {
     getSignedCookie: {
       configurable: false,
       writable: false,
-      value: function (name) {
+      value(name) {
         return this.express.req.signedCookies[name]
       },
     },
     setSignedCookie: {
       configurable: false,
       writable: false,
-      value: function (name, value) {
+      value(name, value) {
         this.express.res.cookie(name, value, { signed: true })
       },
     },
   })
 
-  return function createContext (req, res) {
+  return function createContext(req, res) {
     return Object.create(contextPerDefinition, {
       fileModuleInitialized: { configurable: false, writable: true, value: false },
       express: {
@@ -142,7 +142,8 @@ function contexter (di, definition, options) {
   }
 }
 
-export function ContextWrapper (options = {}) {
+export function ContextWrapper(options = {}) {
+  // eslint-disable-next-line no-param-reassign
   options = Object.assign(
     {
       type: 'express',
@@ -156,9 +157,9 @@ export function ContextWrapper (options = {}) {
         wrap: {
           writable: false,
           configurable: false,
-          value: function (di, definition) {
+          value(di, definition) {
             const createContextPerDefinition = contexter(di, definition, options)
-            return function (req, res, next) {
+            return function wrappedHandler(req, res, next) {
               const context = createContextPerDefinition(req, res)
               Promise.resolve(definition.handler(context))
                 .then(
@@ -175,8 +176,9 @@ export function ContextWrapper (options = {}) {
                 )
                 .finally(async () => {
                   // run deferred tasks.
-                  for (let i = 0; i < context._deferred.length; i++) {
+                  for (let i = 0; i < context._deferred.length; i += 1) {
                     try {
+                      // eslint-disable-next-line no-await-in-loop
                       await Promise.resolve(context._deferred[i]())
                     } catch (ex) {
                       console.error(ex)

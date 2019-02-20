@@ -1,3 +1,4 @@
+/* eslint-disable global-require */
 export function storageDefiner (options = {}) {
   return function defineStorage (name) {
     return Object.create(null, {
@@ -7,7 +8,7 @@ export function storageDefiner (options = {}) {
       build: {
         configurable: true,
         writable: false,
-        value: function (buildOptions = {}) {
+        value (buildOptions = {}) {
           const driver = ((storageConfig, definition) => {
             const { type, options } = storageConfig
             const opt = Object.assign({}, options, buildOptions)

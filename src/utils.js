@@ -8,7 +8,7 @@ import rimraf from 'rimraf'
  * @param newPath {string}
  * @return {Promise}
  */
-export function copyFile (oldPath, newPath) {
+export function copyFile(oldPath, newPath) {
   return new Promise((resolve, reject) => {
     const readStream = fs.createReadStream(oldPath)
     const writeStream = fs.createWriteStream(newPath)
@@ -16,7 +16,7 @@ export function copyFile (oldPath, newPath) {
     readStream.on('error', reject)
     writeStream.on('error', reject)
 
-    readStream.on('close', function () {
+    readStream.on('close', function onClose() {
       resolve()
     })
 
@@ -31,9 +31,9 @@ export function copyFile (oldPath, newPath) {
  * @param newPath {string}
  * @return {Promise}
  */
-export function moveFile (oldPath, newPath) {
+export function moveFile(oldPath, newPath) {
   return new Promise((resolve, reject) => {
-    fs.rename(oldPath, newPath, function (err) {
+    fs.rename(oldPath, newPath, function renameCallback(err) {
       if (err) {
         if (err.code === 'EXDEV') {
           resolve(copyFile(oldPath, newPath))
@@ -46,7 +46,7 @@ export function moveFile (oldPath, newPath) {
   })
 }
 
-export async function rmrf (path) {
+export async function rmrf(path) {
   return new Promise((resolve, reject) => {
     rimraf(path, err => {
       if (err) {
