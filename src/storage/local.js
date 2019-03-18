@@ -1,10 +1,11 @@
 /* eslint-disable no-underscore-dangle */
-import _ from 'lodash'
-import path from 'path'
-import mkdirp from 'mkdirp'
 import Debug from 'debug'
-import uuid from 'uuid/v4'
+import _ from 'lodash'
+import mkdirp from 'mkdirp'
 import { ensure } from 'od-js'
+import path from 'path'
+import uuid from 'uuid/v4'
+
 import { copyFile, moveFile } from '../utils'
 
 const driverPrototype = {
@@ -35,7 +36,7 @@ const driverPrototype = {
     }
 
     // const { contentType = 'image/jpeg', ext = '.jpg' } = options
-    const { originalname } = options
+    const { originalname, removeOriginal = this._removeOriginal } = options
     let { ext } = options
     ext = ext || (originalname ? path.extname(originalname) : null) || '.jpg'
 
@@ -43,7 +44,7 @@ const driverPrototype = {
 
     const imageId = uuid()
     const finalImagePath = path.join(this._basePath, this._name, `${imageId}${ext}`)
-    if (this._removeOriginal) {
+    if (removeOriginal) {
       await moveFile(imagePath, finalImagePath)
     } else {
       await copyFile(imagePath, finalImagePath)

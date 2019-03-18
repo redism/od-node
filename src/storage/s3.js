@@ -40,7 +40,13 @@ const driverPrototype = {
     }
 
     let { fileName, contentType, ext } = options
-    const { mimetype, originalname, asAttachment, uploadOptions: uo = {} } = options
+    const {
+      mimetype,
+      originalname,
+      asAttachment,
+      uploadOptions: uo = {},
+      removeOriginal = this._removeOriginal,
+    } = options
     contentType = contentType || mimetype || 'image/jpeg'
     ext = ext || (originalname ? path.extname(originalname) : null) || '.jpg'
     fileName = fileName || originalname
@@ -76,7 +82,7 @@ const driverPrototype = {
       })
     })
 
-    if (this._removeOriginal) {
+    if (removeOriginal) {
       await new Promise(resolve => {
         fs.unlink(imagePath, resolve)
       })
