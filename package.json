@@ -22,6 +22,7 @@
     "body-parser": "1.18.3",
     "btoa": "1.2.1",
     "cookie-parser": "1.4.4",
+    "csv": "5.1.1",
     "debug": "4.1.1",
     "express": "4.16.4",
     "jsonwebtoken": "8.4.0",
@@ -53,9 +54,9 @@
     "@babel/plugin-proposal-throw-expressions": "7.2.0",
     "@babel/preset-env": "7.3.1",
     "@babel/register": "7.0.0",
+    "aws-sdk": "2.406.0",
     "babel-eslint": "10.0.1",
     "babel-plugin-transform-promise-to-bluebird": "2.0.0",
-    "aws-sdk": "2.406.0",
     "bcrypt": "3.0.4",
     "eslint": "5.14.1",
     "eslint-config-airbnb": "17.1.0",
@@ -87,6 +88,6 @@
     "aws-sdk": "^2.406.0",
     "bcrypt": "^3.0.4",
     "mysql": "^2.16.0",
-    "od-js": "0.2.0"
+    "od-js": "1.1.0"
   }
 }

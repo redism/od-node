@@ -7,12 +7,15 @@ import mkdirP from 'mkdirp'
 import moment from 'moment'
 import mysql from 'mysql'
 import { ensure } from 'od-js'
+import { NodeUtils } from './csv'
 import ODApp from './express'
 import { handlerMaker } from './handler'
 import { getDupKeyErrorIndexName, isDeadLockError, isDupKeyError, isForeignKeyError, upsertSQL } from './mysql'
 import { gmailSender } from './sendmail'
 import { SlackNotifier } from './slack'
 import { storageDefiner } from './storage/definition'
+
+export { NodeUtils }
 
 const knex = Knex({ client: 'mysql' }) // use only for query-builder
 
