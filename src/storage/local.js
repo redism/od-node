@@ -6,7 +6,7 @@ import { ensure } from 'od-js'
 import path from 'path'
 import uuid from 'uuid/v4'
 
-import { copyFile, moveFile } from '../utils'
+import { copyFile, moveFile, rmrf } from '../utils'
 
 const driverPrototype = {
   async init() {
@@ -51,6 +51,10 @@ const driverPrototype = {
     }
 
     return imageId
+  },
+  async remove(imageId, { ext = '.jpg' } = {}) {
+    const finalImagePath = path.join(this._basePath, this._name, `${imageId}${ext}`)
+    return rmrf(finalImagePath)
   },
 }
 

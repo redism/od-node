@@ -49,11 +49,26 @@ describe('storage', () => {
       await driver.emptyBucket()
     })
 
-    it('upload image using s3', async () => {
+    it('upload and remove image using s3', async () => {
       const r = await driver.save(imagePath)
 
       expect(typeof r).toEqual('string')
       expect(r.length).toBeGreaterThan(0)
+
+      const url = `https://s3-us-west-2.amazonaws.com/gcb-testcase/${r}.jpg`
+      const res = await request({ method: 'get', url, resolveWithFullResponse: true })
+      expect(res.statusCode).toEqual(200)
+
+      await driver.remove(r, { ext: '.jpg' })
+
+      let successful = true
+      try {
+        await request({ method: 'get', url, resolveWithFullResponse: true })
+      } catch (ex) {
+        expect(ex.statusCode).toEqual(403)
+        successful = false
+      }
+      expect(successful).toBe(false)
     })
 
     it('upload pdf using s3 /w content-disposition', async () => {

@@ -101,6 +101,10 @@ const driverPrototype = {
   },
   async emptyBucket() {
     const data = await this.listBucket()
+    if (data.Contents.length === 0) {
+      return Promise.resolve()
+    }
+
     const param = {
       Bucket: this._bucketName,
       Delete: {
@@ -121,6 +125,23 @@ const driverPrototype = {
   },
   get bucketName() {
     return this._bucketName
+  },
+  async remove(imageId, { ext = '.jpg' } = {}) {
+    const s3 = new AWS.S3()
+    const bucketName = this._bucketName
+    const key = `${this._prefix}${imageId}${ext}`
+    return new Promise((resolve, reject) => {
+      s3.deleteObject(
+        {
+          Bucket: bucketName,
+          Key: key,
+        },
+        (err, data) => {
+          err && reject(err)
+          !err && resolve(data)
+        }
+      )
+    })
   },
 }
 
